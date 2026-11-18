@@ -1,6 +1,6 @@
+^gnfidatR\.Rproj$
 .Rproj.user
 inst/doc
-*.Rd
 .vscode/settings.json
 .Rhistory
 *.sqlite-shm

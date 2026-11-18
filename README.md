@@ -1,31 +1,30 @@
 # gnfidatR
 
+**Access, retrieve and process data from the German National Forest Inventory (Bundeswaldinventur, BWI) in R.**
 
-**Download and process data from the German National Forest Inventory (Bundeswaldinventur, BWI).**
+`gnfidatR` provides an R interface to data from the **German National Forest Inventory (Bundeswaldinventur, BWI)** supplied by the [Thünen Institute](https://www.thuenen.de/). The package facilitates retrieving, filtering and processing inventory data through the Thünen Institute's REST API. It also provides functionality for preparing standardized input databases for the forest growth simulator **WEHAM** (Waldentwicklungs- und Holzaufkommensmodellierung).
 
-`gnfidatR` provides easy access to data from the **German National Forest Inventory (Bundeswaldinventur, BWI)** supplied by the [Thünen Institute](https://www.thuenen.de/). In addition to downloading and accessing BWI data, the package provides functions for preparing the data for use with the forest growth simulator **WEHAM** (Waldentwicklungs- und Holzaufkommensmodellierung).
-
-> **Development version:** `gnfidatR` is currently under active development. The functionality may change.
 
 ## Features
 
-The package is designed to simplify working with German National Forest Inventory data in R.
+The package aims to simplify access to German National Forest Inventory data and support reproducible workflows for forest modelling and analysis.
 
-Currently, the main functionality includes:
+Main functionalities include:
 
-* Downloading BWI data supplied by the Thünen Institute
-* Easy access to BWI datasets from R
-* Preparing and processing BWI data
-* Generating predefined input databases for the forest growth simulator **WEHAM**
-* Supporting reproducible workflows for analyses based on BWI data
+* **API access:** Retrieve BWI data directly from the Thünen Institute's REST API.
+* **Database inspection:** Explore available API schemas, tables, views and column metadata.
+* **Data retrieval and filtering:** Access and filter inventory plots and associated tree data.
+* **Spatial information:** Retrieve cluster identifiers and coordinates, including functionality for working with shapefiles.
+* **WEHAM data preparation:** Generate predefined input databases for the forest growth simulator WEHAM.
+* **Reproducible workflows:** Provide a consistent interface for accessing and preparing BWI data in R.
 
 ## Installation
 
-The development version can be installed directly from this GitLab repository:
+The development version can be installed directly from the GitHub repository:
 
 ```r
 # install.packages("remotes")
-remotes::install_gitlab("YOUR_NAMESPACE/gnfidatR")
+remotes::install_github("spl2809/gnfidatR")
 ```
 
 Alternatively, clone the repository and install the package locally:
@@ -49,23 +48,48 @@ Load the package:
 library(gnfidatR)
 ```
 
-A typical workflow consists of downloading the required BWI data and subsequently preparing the data for further analysis or for use with WEHAM.
+### Inspect the available database structure
+
+The function `database_structure()` retrieves metadata from the API's OpenAPI document. It allows users to inspect available tables, views and columns for a selected schema.
 
 ```r
-# Example workflow
-bwi_data <- ...
-weham_data <- ...
+schema <- database_structure(
+  accept_profile = "lookup",
+  view = FALSE
+)
+
+head(schema)
 ```
 
-More detailed examples and documentation will be added as the package develops.
+The available schemas include:
+
+* `inventory_archive`
+* `derived_tmp`
+* `derived`
+* `lookup`
+* `public`
+
+### Retrieve BWI data
+
+The package provides functions to retrieve and filter inventory data through the API. The retrieved data can be used directly for analyses or as a basis for further processing.
+
+### Prepare WEHAM input databases
+
+The function `get_weham_data()` provides a standardized interface for generating the input databases required by WEHAM.
+
+```r
+?get_weham_data
+```
+
+See the function documentation for available settings, data options and output structures.
 
 ## German National Forest Inventory
 
-The **Bundeswaldinventur (BWI)** is a nationwide inventory of forests in Germany. It provides comprehensive information on forest area, tree species, growing stock, increment, forest structure and other characteristics of German forests.
+The **Bundeswaldinventur (BWI)** is a nationwide inventory of forests in Germany. It provides comprehensive information on forest area, tree species composition, growing stock, increment, forest structure and other characteristics of German forests.
 
 The BWI data used by this package are supplied by the **Thünen Institute**.
 
-For further information about the German National Forest Inventory, see:
+Further information:
 
 * [Thünen Institute – Bundeswaldinventur](https://www.thuenen.de/)
 * [Bundeswaldinventur](https://www.bundeswaldinventur.de/)
@@ -74,49 +98,33 @@ Please refer to the original data provider for information on data licensing, me
 
 ## WEHAM
 
-`gnfidatR` also provides functionality for preparing input data for **WEHAM – Waldentwicklungs- und Holzaufkommensmodellierung**.
+`gnfidatR` provides functionality for preparing input data for **WEHAM – Waldentwicklungs- und Holzaufkommensmodellierung**.
 
-WEHAM is a forest growth and yield simulation model used to project forest development and timber availability under different scenarios.
+WEHAM is a forest development and timber availability projection model used to simulate forest development under different scenarios.
 
-The package aims to simplify the preparation of the often complex input databases required for WEHAM and to make these workflows reproducible in R.
+Preparing WEHAM input data requires processing several inventory datasets and combining information on plots, trees, regeneration and other forest characteristics. `gnfidatR` aims to simplify this process by providing predefined database structures and standardized data preparation workflows.
+
+The package focuses on data access and preparation; it does not replace the WEHAM simulation model itself.
 
 ## Development
 
-This project is currently under development.
+This project is currently under active development.
 
-Contributions, bug reports and suggestions are welcome. Please use the GitLab issue tracker for:
+Contributions, bug reports and suggestions are welcome. Please use the GitHub issue tracker for:
 
 * Bug reports
 * Feature requests
 * Questions about the package
 * Suggestions for improvements
 
-For development, clone the repository and work from the package source:
-
-```bash
-git clone <REPOSITORY_URL>
-cd gnfidatR
-```
-
-Then install the package locally:
-
-```r
-devtools::load_all()
-```
-
-Run the package checks with:
-
-```r
-devtools::check()
-```
 
 ## Authors
 
-* **Nils Steuernagel** – author and maintainer
+* **Nils Steuernagel** – Author and maintainer  
   [nils.steuernagel@gmail.com](mailto:nils.steuernagel@gmail.com)
 
-* **Stefan Paul** – author and maintainer
-  [stefan.paul@forst.bwl.de](mailto:stefan.paul@forst.bwl.de)
+* **Stefan Paul** – Author  
+  [stefan.paul@futureforests.uni-freiburg.de](mailto:stefan.paul@futureforests.uni-freiburg.de)
 
 ## License
 
