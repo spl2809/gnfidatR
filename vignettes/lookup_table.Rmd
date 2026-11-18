@@ -1,0 +1,277 @@
+---
+title: "Lookup Table"
+lang: en
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{Lookup Table}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE, eval=TRUE, purl=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE,
+  purl = FALSE,
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+# Quick start
+
+Lookup tables explain the codes used in the gnfi data. They associate a code with a label and, depending on the table, additional information.
+For example, the federal-state code `8` represents Baden-Württemberg.
+
+Use `view_lookup()` to retrieve a lookup table from the REST API. Choose the
+table with the `table` argument: `table = "state"` retrieves the federal-state
+lookup, while `table = "tree_species"` retrieves tree-species definitions. The
+same function provides data viewing and export options for every lookup table.
+
+```{r quick-start, eval=FALSE, purl=FALSE}
+library(gnfidatR)
+
+# Retrieve the federal-state lookup and open it in the data viewer:
+view_lookup(table = "state")
+
+# Retrieve the same lookup for use in a script:
+federal_states <- view_lookup(table = "state", view_data = FALSE)
+head(federal_states)
+```
+
+Pass the table name **without the `lookup_` prefix**. The function adds it
+internally, so `table = "state"` queries the API table `lookup_state`. Use the
+exact values listed in the [table reference](#table-reference).
+
+By default, `view_lookup()` opens `utils::View()` and also returns the result
+invisibly. Assign the call to a variable to keep the data; set
+`view_data = FALSE` when you do not want to open the viewer.
+
+The examples in this vignette are shown **without being executed** during the
+build and are excluded from the extracted vignette script. Run them manually
+with internet access to query the API, open a viewer, or create export files.
+
+# Arguments and behaviour
+
+`view_lookup()` retrieves data through `gnfi_query()`. It selects all columns
+from the chosen table in the `lookup` API schema and requests rows ordered by
+`code`, then `id`. It does not select an inventory cycle automatically; check
+the returned `interval` values when interpreting historical codes.
+
+| Argument        | Default                            | Purpose                                                                                                      |
+| --------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `table`         | Required                           | One lookup name without `lookup_`, for example `"state"` or `"tree_species"`. See the table reference below. |
+| `url`           | `"https://ci.thuenen.de/rest/v1/"` | REST API base URL.                                                                                           |
+| `apikey`        | Included public key                | API key passed to `gnfi_query()`; supply a different key when needed.                                        |
+| `page_size`     | `-1`                               | Value passed to the `limit` argument of `gnfi_query()`; its interpretation is handled there.                 |
+| `create_csv`    | `FALSE`                            | Enable CSV export through `gnfi_query()`.                                                                    |
+| `csv_name`      | `NULL`                             | CSV file name or path, interpreted by `gnfi_query()`.                                                        |
+| `create_sqlite` | `FALSE`                            | Enable SQLite export through `gnfi_query()`.                                                                 |
+| `sqlite_name`   | `NULL`                             | SQLite database file name or path, interpreted by `gnfi_query()`.                                            |
+| `sqlite_table`  | `NULL`                             | Table name within the SQLite database.                                                                       |
+| `view_data`     | `TRUE`                             | Open `utils::View()`; use `FALSE` in scripts or when knitting.                                               |
+
+The result is the object returned by `gnfi_query(return_data = TRUE)`, returned
+invisibly. You can assign it to a variable whether or not the viewer is opened.
+To inspect the complete function signature in R, use `args(view_lookup)`.
+
+## View a result with a custom title
+
+The default viewer title is derived from the lookup name: `"land_use"` becomes
+`"Land Use"`. To choose your own title, retrieve the data first and open the
+viewer yourself:
+
+```{r named-view, eval=FALSE, purl=FALSE}
+land_use <- view_lookup(table = "land_use", view_data = FALSE)
+utils::View(land_use, title = "Land use categories")
+```
+
+## Export a result
+
+Enable CSV or SQLite export with the corresponding arguments. The result is
+still returned, so you can keep it in R while exporting it:
+
+```{r export-examples, eval=FALSE, purl=FALSE}
+marker_profile <- view_lookup(
+  table = "marker_profile",
+  create_csv = TRUE,
+  csv_name = "marker_profile.csv",
+  view_data = FALSE
+)
+
+view_lookup(
+  table = "harvest_method",
+  create_sqlite = TRUE,
+  sqlite_name = "lookups.sqlite",
+  sqlite_table = "harvest_method",
+  view_data = FALSE
+)
+```
+
+# Reading lookup tables
+
+Lookup tables contain **code definitions**, not inventory observations or
+counts. Most tables have the following structure:
+
+| Column     | Meaning                                                                                                      |
+| ---------- | ------------------------------------------------------------------------------------------------------------ |
+| `code`     | Domain code used by inventory records; usually numeric, but text in the `interval` lookup.                   |
+| `id`       | Internal UUID identifying the lookup row.                                                                    |
+| `name_de`  | German label.                                                                                                |
+| `name_en`  | English label, where available; some labels are missing or incomplete.                                       |
+| `interval` | Inventory-cycle tags supplied by the source. Check them when interpreting historical codes.                  |
+| `sort`     | Optional display-order value. `view_lookup()` requests ordering by `code` and `id`, rather than this column. |
+
+Some tables add metadata or links, such as `abbreviation` in the `state`
+lookup, `growth_region` in `growth_district`, and `code_district` in
+`municipality`. When joining an inventory field documented as a lookup code,
+match it to `code`, not `id`. Use the labels and inventory context to interpret
+a value; codes such as cover classes are not direct measurements.
+
+# Table reference
+
+The following groups list 64 lookup tables. Pass any value from the first
+column to `table`, without the `lookup_` prefix. For example, use
+`view_lookup(table = "land_use")` for
+land-use definitions or `view_lookup(table = "tree_species")` for tree-species
+definitions.
+
+Descriptions summarize the lookup values and their use in the inventory schema
+and field comments.
+
+## Inventory design, fieldwork, and relocation
+
+| `table` value          | Meaning and use                                                                                                                                                               |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `"accessibility"`      | Whether a plot can be visited, with reasons for restricted access such as dangerous terrain, dense vegetation, or access prohibitions.                                        |
+| `"cluster_situation"`  | How a cluster falls within the survey area and sampling grid, including border situations that require a complete, partial, or omitted survey.                                |
+| `"cluster_status"`     | The forest-related status of an inventory cluster: previously surveyed forest, newly established forest cluster, uncertain forest status, or different non-forest situations. |
+| `"gnss_quality"`       | GNSS positioning and fix-quality classes, including differential and RTK solutions, invalid fixes, and other positioning methods.                                             |
+| `"grid_density"`       | Sampling-grid categories and their spacing, including denser grid subsets and a category for unsystematic training clusters.                                                  |
+| `"interval"`           | Inventory-cycle identifiers and labels, such as bwi2022 and ci2027. This table uses text codes; `view_lookup()` does not select an inventory cycle automatically.             |
+| `"marker_profile"`     | Physical form or material of the permanent plot marker, such as round iron, T-profile iron, magnets, or combinations of marking aids.                                         |
+| `"marker_status"`      | Whether the permanent plot marker was searched for, found again, replaced, or installed for the first time.                                                                   |
+| `"object_type"`        | The inventory object a note refers to, such as a cluster, plot, sample tree, boundary, regeneration sample, or deadwood item.                                                 |
+| `"sampling_stratum"`   | Regional sampling-intensification strata, combining state or area membership with the sampling-density history used in different inventories.                                 |
+| `"support_point_type"` | Purpose of a relocation aid, for example an offset marker, landmark, survey starting point, or GNSS support point.                                                            |
+
+## Forest and site classification
+
+| `table` value               | Meaning and use                                                                                                                                                             |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `"elevation_level"`         | Natural elevational vegetation zones, from lowland and hill zones through montane to high-montane or subalpine zones.                                                       |
+| `"exploration_instruction"` | The forest-site mapping guideline or instruction system used for site classification. Entries include regional guideline editions and a category for sites without mapping. |
+| `"ffh_forest_type"`         | FFH forest habitat types, including habitat codes and categories for no habitat type or an unclear preliminary assessment. Used for preliminary and field classifications.  |
+| `"forest_community"`        | Potential natural forest communities associated with a site, such as beech, oak, or mixed forest communities.                                                               |
+| `"forest_status"`           | Forest/non-forest classification at a plot, with distinctions for stocked forest land, temporarily unstocked land, other forest land, and inventory-specific special cases. |
+| `"land_use"`                | Land-use categories recorded for the plot, including agricultural land, wetlands, water, settlement, transport, and other land uses.                                        |
+| `"terrain_form"`            | Topographic form at the plot, such as a plain, valley, slope position, ridge, or plateau.                                                                                   |
+
+## Ownership, management, and harvesting
+
+| `table` value           | Meaning and use                                                                                                                                                         |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `"harvest_condition"`   | Technical suitability of the site for timber harvesting, including requirements for slope-adapted machinery or cable extraction and substantially difficult conditions. |
+| `"harvest_method"`      | Harvest pattern: no harvesting, selective removals, or area-wide removals. Technical site suitability is described separately by `harvest_condition`.                   |
+| `"harvest_reason"`      | Reason for harvesting: regular operations, storm damage, insects/drought, other disturbance, or an uncertain or unknown cause.                                          |
+| `"harvest_restriction"` | Restrictions on timber use and the expected share of normal harvesting, including unrestricted use and situations where harvesting is prohibited or not expected.       |
+| `"management_type"`     | Silvicultural management system, including even-aged high forest, selection forest, coppice with standards, coppice, and short-rotation plantations.                    |
+| `"property_size_class"` | Forest-ownership holding size classes in hectares. The classes describe the ownership holding rather than the sampled plot area.                                        |
+| `"property_type"`       | Forest ownership categories, including federal or state forest, corporate/public-body forest, private forest, and more detailed legal-form variants.                    |
+
+## Stand structure and regeneration origin
+
+| `table` value                     | Meaning and use                                                                                                                                                           |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `"basal_area_factor"`             | Basal-area factors 1 and 2 used for angle-count sampling of stand-structure trees taller than 4 m.                                                                        |
+| `"cover_percentage"`              | Coded cover/share classes, mainly in approximate ten-percentage-point steps, used for low-tree vegetation and species shares. Read the labels for the class bounds.       |
+| `"layer"`                         | Layer categories for vegetation up to about 4 m, including main stocking, regeneration, residual stocking, and a sampling-circle category.                                |
+| `"stand_development_phase"`       | Stand development and diameter classes, from pioneer/pole stages to large old timber. This is a stand classification, separate from individual regeneration size classes. |
+| `"stand_layer"`                   | Vertical position or role of trees within a stand, such as main stand, understorey, overstorey, or regeneration under an existing canopy.                                 |
+| `"stand_structure"`               | Vertical structure of the whole stand: one layer, two layers, or multiple layers/selection structure, with additional historical subdivisions.                            |
+| `"trees_greater_4meter_mirrored"` | Mirroring method recorded for sampling trees taller than 4 m: none, relascope mirroring, or the walk-through method.                                                      |
+| `"trees_less_4meter_origin"`      | Origin of the low-tree vegetation: natural regeneration, sowing, planting, coppice shoots, or an unclassifiable origin.                                                   |
+
+## Tree attributes, damage, and deadwood
+
+| `table` value          | Meaning and use                                                                                                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `"bark_condition"`     | Bark condition relevant to diameter measurement, including intact, missing, partly present, or bulging bark; the entries also describe associated measurement handling.     |
+| `"browsing"`           | Browsing damage on regeneration, distinguishing undamaged plants and damage patterns involving terminal buds and lateral shoots. Definitions vary between inventory cycles. |
+| `"damage_peel"`        | Bark-stripping damage categories for regeneration: none, recent damage with possible older damage, or older damage only.                                                    |
+| `"dead_wood_type"`     | Physical form of a deadwood item, such as a standing tree, standing fragment, stump, lying stem, or harvesting residue.                                                     |
+| `"decomposition"`      | Deadwood decay stages, ranging from undecomposed material through beginning and advanced decay to heavily decomposed wood.                                                  |
+| `"pruning"`            | Whether a tree was pruned and the pruning-height class. Historical inventory cycles may use different height bands.                                                         |
+| `"stem_breakage"`      | Stem/crown breakage class: no break, a broken top, or a larger crown break; the labels define the length distinction.                                                       |
+| `"stem_form"`          | Stem form and continuity, including a stem extending into the crown, forking, or lack of a distinct single stem; historical codes also include older special cases.         |
+| `"tree_size_class"`    | Size classes for regeneration and small trees, defined using height and/or diameter at breast height (DBH), with inventory-specific historical classes.                     |
+| `"tree_species"`       | Tree-species codes and names used across tree, regeneration, stand-structure, and related records; the schema also provides genus/species and other species metadata.       |
+| `"tree_species_group"` | Broad wood/species groups used for deadwood: conifers, broadleaves excluding oak, and oak.                                                                                  |
+| `"tree_status"`        | Sample-tree history and status, including new or remeasured trees, removals, dead or missing trees, invalid samples, and exclusions from earlier inventories.               |
+
+## Forest and stand boundaries
+
+| `table` value             | Meaning and use                                                                                                                                                      |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `"edge_stand_difference"` | Stand-height and tree-species-share differences across a boundary; the classes describe why adjacent stands are distinguished.                                       |
+| `"edge_status"`           | History and validity of a recorded boundary, including newly recorded, retained, retrospectively identified, no longer valid, or previously excluded boundaries.     |
+| `"edge_type"`             | Boundary category combining the neighbouring land/stand situation with whether the boundary is new, applies retrospectively, or was retained from an earlier survey. |
+| `"edge_type_deprecated"`  | Legacy boundary classes for older inventories, including outer/inner forest edges and stand boundaries. Retained to interpret historical records.                    |
+| `"terrain"`               | Land cover or stand situation on the other side of a forest/stand boundary, such as cropland, grassland, water, woodland, or an adjacent stand.                      |
+
+## Geographic, administrative, and conservation references
+
+| `table` value               | Meaning and use                                                                                                                                                        |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `"biogeographische_region"` | Biogeographical region assigned to a plot: Atlantic, Continental, or Alpine.                                                                                           |
+| `"biosphaere"`              | Codes and names of biosphere reserves, including a category for no biosphere-reserve membership.                                                                       |
+| `"biotope"`                 | Protected forest-biotope categories, including regional categories and a no-special-protection entry; used to interpret the biotope classification recorded at a plot. |
+| `"district"`                | Administrative district and urban-district codes/names. Municipalities refer to these codes through `code_district`.                                                   |
+| `"ffh"`                     | Named FFH conservation sites and a no-site category. This identifies site membership; `ffh_forest_type` describes the forest habitat classification.                   |
+| `"forest_office"`           | Forestry administrative office codes and names associated with plots.                                                                                                  |
+| `"growth_district"`         | Forest ecological growth districts (Wuchsbezirke), linked to their broader growth regions through `growth_region`.                                                     |
+| `"growth_region"`           | Forest ecological growth regions (Wuchsgebiete), providing the broader regional framework for growth districts.                                                        |
+| `"municipality"`            | Official municipality codes and names, with a `code_district` reference to the containing administrative district.                                                     |
+| `"national_park"`           | National-park codes and names, including a category for plots outside a national park.                                                                                 |
+| `"natur_park"`              | Nature-park codes and names, including a category for plots outside a nature park. Nature parks and national parks use separate classifications.                       |
+| `"natur_schutzgebiet"`      | Nature-reserve membership indicator. Codes distinguish no membership (0) from membership (1).                                                                          |
+| `"state"`                   | German federal-state codes, names, and abbreviations, plus an outside-Germany category. Used for plot location and inventory responsibility.                           |
+| `"vogel_schutzgebiet"`      | Bird-protection area codes and names, including a category for locations outside these areas.                                                                          |
+
+# Troubleshooting
+
+`view_lookup()` uses `gnfi_query()` to retrieve a lookup table and, by default,
+opens the result in a data viewer. If the function does not return the expected
+data, first retrieve the table without opening the viewer:
+
+```{r lookup-without-viewer, eval=FALSE, purl=FALSE}
+library(gnfidatR)
+
+federal_states <- view_lookup(table = "state", view_data = FALSE)
+head(federal_states)
+```
+
+If this returns the expected data, the download has succeeded. You can use the
+returned object directly, even if the viewer is unavailable in your R session.
+
+To query the lookup table directly, call `gnfi_query()` with the settings used
+by `view_lookup()`:
+
+```{r lookup-using-gnfi-query, eval=FALSE, purl=FALSE}
+federal_states <- gnfi_query(
+  table = "lookup_state",
+  params = list(select = "*", order = "code,id"),
+  accept_profile = "lookup"
+)
+
+head(federal_states)
+```
+
+Unlike `view_lookup()`, this call requires the full table name, including the
+`lookup_` prefix, and explicitly selects the `lookup` API schema through
+`accept_profile`.

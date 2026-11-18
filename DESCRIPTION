@@ -1,0 +1,45 @@
+Package: gnfidatR
+Title: Download Data of the German National Forest Inventory
+Version: 0.0.0.9000
+Authors@R:
+    c(
+      person("Nils", "Steuernagel",
+             email = "nils.steuernagel@gmail.com",
+             role = c("aut")),
+      person("Stefan", "Paul",
+             email = "stefan.paul@forst.bwl.de",
+             role = c("aut", "cre")),
+      person("Jan", "Schick",
+             email = "jan.schick@wwd.uni-freiburg.de",
+             role = "ctb")
+    )
+Description: Provides easy access to data from the German National Forest Inventory
+    supplied by the Thünen Institute. Additionally, the package provides predefined
+    functions to generate input databases for the forest growth simulator WEHAM.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Imports:
+    dplyr,
+    RSQLite,
+    httr2,
+    tidyr,
+    readr,
+    yyjsonr,
+    data.table,
+    tidyselect,
+    DBI,
+    rlang,
+    jsonlite
+Depends:
+    R (>= 4.1.0)
+Suggests:
+    sf,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.2.0),
+    withr
+VignetteBuilder: knitr
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.1
+Config/testthat/edition: 3

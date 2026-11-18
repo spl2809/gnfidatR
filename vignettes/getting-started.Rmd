@@ -1,0 +1,688 @@
+---
+title: "getting-started"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{getting-started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r vignette-options, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+
+# About gnfidatR {#about-gnfidatR}
+
+`gnfidatR` provides access to data from the German National Forest Inventory
+(NFI; in German Bundeswaldinventur, BWI) through an API hosted by the Thünen
+Institute.
+
+The central function of `gnfidatR` is `gnfi_query()`. It allows users to write
+SQL-like requests without manually constructing URLs or HTTP requests. The
+package converts the query arguments into an API request and returns the
+result as an R data frame.
+
+A typical request specifies:
+
+- the database table to query;
+- the columns to return;
+- filters that restrict the rows;
+- a unique row ordering;
+
+Use `database_structure("inventory_archive")` to inspect table
+and column metadata. Its first argument is a **schema name**, not a table
+name.
+See [table and column metadata](#query-tables) and
+[querying different schemas](#querying-different-schemas) for examples.
+The function `view_lookup()` retrieves tables, which explain numerical values. E.g. `view_lookup("states)` shows which federal state is referred to by which number.
+See the [lookup table vignette](lookup_table.html) for more information.
+
+The package also provides `get_weham_data()`, which prepares an input
+database for the forest simulation
+[WEHAM](https://www.bundeswaldinventur.de/weham-2023-bis-2062/das-modell-zum-wald).
+The [WEHAM section](#creating-a-weham-database) explains that workflow.
+
+Most package, API, and column names are in English. The
+[Name conversions vignette](name-conversions.html) and the
+[official migration documentation](https://thuenen-forest-ecosystems.github.io/TFM-Documentation/api/migration.html)
+help relate these names to German inventory terminology.
+
+| German    | English |
+| --------- | ------- |
+| Trakt     | cluster |
+| Traktecke | plot    |
+| Baum      | tree    |
+
+# Getting ready {#getting-ready}
+
+Install `gnfidatR` using the instructions supplied with your package
+distribution. If you received a local source archive, you can install it
+as follows. Replace the example path with the path to your archive.
+
+```{r install-source-archive, eval = FALSE}
+install.packages(
+  "path/to/gnfidatR_VERSION.tar.gz",
+  repos = NULL,
+  type = "source"
+)
+```
+
+Load the installed package:
+
+```{r setup}
+library(gnfidatR)
+```
+
+The download examples require an internet connection. They are not executed
+when this vignette is built; run the chunks in order in your R session.
+The default API URL and public API key are supplied by the package, so
+you normally do not need to configure a connection.
+
+# A first query {#a-first-query}
+
+The following SQL query returns cluster identifiers and training flags for
+clusters that are not marked as training data:
+
+```{sql first-query-sql, eval = FALSE}
+SELECT   cluster_name, is_training
+FROM     cluster
+WHERE    is_training = FALSE
+ORDER BY cluster_name;
+```
+
+The equivalent request with `gnfidatR` is:
+
+```{r first-query, eval = FALSE}
+cluster_params <- list(
+  select = "cluster_name,is_training",
+  is_training = "eq.false",
+  order = "cluster_name.asc"
+)
+
+cluster_data <- gnfi_query(
+  table = "cluster",
+  params = cluster_params
+)
+
+head(cluster_data)
+```
+
+The result has one row per selected cluster and the columns `cluster_name`
+and `is_training`. The training flag is `FALSE` for every returned row
+because of the filter. `head()` displays the first six rows after the
+download has finished; it does not restrict the download.
+
+The two required arguments are:
+
+- `table`: the API table, corresponding to SQL `FROM`;
+- `params`: the column selection, row filters, and ordering, corresponding
+  to SQL `SELECT`, `WHERE`, and `ORDER BY`.
+
+The following sections explain the main arguments and common workflows.
+
+# The `gnfi_query()` function {#gnfi-query}
+
+## The `table` argument: the `FROM` equivalent {#query-tables}
+
+The `table` argument names a table within the selected API schema.
+Common tables in the default schema, `inventory_archive`, include:
+
+| Table          | Contents                     |
+| -------------- | ---------------------------- |
+| `cluster`      | Inventory clusters           |
+| `plot`         | Plot attributes              |
+| `tree`         | Individual tree measurements |
+| `regeneration` | Regeneration records         |
+
+For example, this prepares a query for cluster identifiers:
+
+```{r from-example, eval = FALSE}
+cluster_data <- gnfi_query(
+  table = "cluster",
+  params = list(
+    select = "cluster_name",
+    is_training = "eq.false",
+    order = "cluster_name.asc"
+  )
+)
+```
+
+To inspect available tables and columns, retrieve the schema metadata and
+display a small part of it:
+
+```{r inspect-inventory-schema, eval = FALSE}
+inventory_schema <- database_structure(
+  accept_profile = "inventory_archive",
+  view = FALSE
+)
+
+plot_columns <- inventory_schema[
+  inventory_schema$table == "plot",
+  c("column", "type", "format", "description")
+]
+
+head(plot_columns, 8)
+```
+
+`database_structure()` returns table and column metadata. By default,
+`view = TRUE` also opens a data viewer; use `view = FALSE` in scripts and
+rendered documents. For an overview of table relationships you can also consult the
+[Thünen data structure documentation](https://thuenen-forest-ecosystems.github.io/TFM-Documentation/api/data-structure.html).
+
+For lookup tables or derived variables, choose the appropriate
+[schema](#querying-different-schemas). The package does not provide a
+general SQL `JOIN` interface. Its
+[`filtering_options` argument](#filtering-options) can retain rows based on
+related plots, but does not add plot attributes to the returned columns.
+
+## The `params` argument: the `SELECT`, `WHERE`, and `ORDER BY` equivalents {#query-params}
+
+`params` is a named list of PostgREST query parameters:
+
+- `select` is required and identifies the columns to return;
+- `order` defines the row ordering needed for reliable pagination;
+- further elements supply filters or other supported PostgREST options.
+
+Do not put `limit` or `offset` in `params`. Use the function's
+[`limit` argument](#pagination) to control the requested page size.
+
+For example:
+
+```{r plot-params-example, eval = FALSE}
+plot_params <- list(
+  select = "cluster_name,plot_name,land_use",
+  land_use = "in.(13,14)",
+  interval_name = "eq.bwi2022",
+  federal_state = "in.(8,9)",
+  order = "id.asc"
+)
+```
+
+This list prepares a query for plots from `bwi2022` in Baden-Württemberg
+(`federal_state = 8`) or Bavaria (`federal_state = 9`), with land-use code
+`13` or `14`. The selected columns include the cluster identifier, plot
+number, and land-use code. Inspect the "land_use" code labels by:
+
+```{r inspect-land-use-codes, eval = FALSE}
+land_use_codes <- view_lookup("land_use", view_data = FALSE)
+land_use_codes[land_use_codes$code %in% c(13, 14), ]
+```
+
+### Selecting columns {#selecting-columns}
+
+Supply column names as a comma-separated string in `select`.
+Use `select = "*"` to request all columns.
+
+An alias has the form `new_name:old_name`. The following parameter list
+prepares the same selection as the first query, but names the returned
+identifier column `name`:
+
+```{r select-column-alias, eval = FALSE}
+renamed_cluster_params <- list(
+  select = "name:cluster_name,is_training",
+  is_training = "eq.false",
+  order = "cluster_name.asc"
+)
+
+renamed_clusters <- gnfi_query(
+  table = "cluster",
+  params = renamed_cluster_params
+)
+
+head(renamed_clusters)
+```
+
+The alias changes the output column name. Filters and ordering in this
+example still refer to the original API column `cluster_name`.
+
+### Filtering rows {#filtering-rows}
+
+Each filter is a named element of `params`. Its name identifies the column;
+its value is a character string containing a PostgREST operator followed
+by a value. For example, `is_training = "eq.false"` requests rows whose
+training flag is false. The string `"eq.false"` is a filter expression;
+the R logical value `FALSE` alone is not an equivalent expression.
+
+Different filters are combined with **AND** by default. The following
+query therefore requires the `bwi2022` interval, a false `coast` flag, and
+a false `sandy` flag at the same time:
+
+```{r filter-plot-rows, eval = FALSE}
+plot_params <- list(
+  select = "interval_name,cluster_name,plot_name,coast,sandy,stand_age",
+  interval_name = "eq.bwi2022",
+  coast = "eq.false",
+  sandy = "eq.false",
+  order = "cluster_name.asc,plot_name.asc"
+)
+
+plot_data <- gnfi_query(
+  table = "plot",
+  params = plot_params
+)
+
+head(plot_data)
+```
+
+The most useful filter expressions are:
+
+| Expression    | Meaning                        | Example         | Approximate SQL equivalent |
+| ------------- | ------------------------------ | --------------- | -------------------------- |
+| `eq.`         | Equal to                       | `"eq.bwi2022"`  | `= 'bwi2022'`              |
+| `neq.`        | Not equal to                   | `"neq.0"`       | `!= 0`                     |
+| `gt.`         | Greater than                   | `"gt.10"`       | `> 10`                     |
+| `gte.`        | Greater than or equal to       | `"gte.10"`      | `>= 10`                    |
+| `lt.`         | Less than                      | `"lt.100"`      | `< 100`                    |
+| `lte.`        | Less than or equal to          | `"lte.100"`     | `<= 100`                   |
+| `like.`       | Pattern match                  | `"like.A*"`     | `LIKE 'A%'`                |
+| `ilike.`      | Case-insensitive pattern match | `"ilike.a*"`    | `ILIKE 'a%'`               |
+| `is.null`     | Missing value                  | `"is.null"`     | `IS NULL`                  |
+| `not.is.null` | Non-missing value              | `"not.is.null"` | `IS NOT NULL`              |
+| `is.true`     | Boolean value is true          | `"is.true"`     | `IS TRUE`                  |
+| `is.false`    | Boolean value is false         | `"is.false"`    | `IS FALSE`                 |
+| `in.`         | One of several values          | `"in.(1,2,3)"`  | `IN (1, 2, 3)`             |
+
+See the
+[PostgREST filter documentation](https://docs.postgrest.org/en/stable/references/api/tables_views.html#horizontal-filtering)
+for further operators and logical combinations.
+
+### Applying several filters to one column {#multiple-column-filters}
+
+Use a character vector to apply several conditions to one column.
+Its elements are combined with **AND**. For example, `stand_age` in years
+can be restricted to the inclusive range from `1` to `300`:
+
+```{r filter-age-range, eval = FALSE}
+plot_params <- list(
+  select = "interval_name,cluster_name,plot_name,stand_age",
+  interval_name = "eq.bwi2022",
+  stand_age = c("gte.1", "lte.300"),
+  order = "cluster_name.asc,plot_name.asc"
+)
+```
+
+A range differs from a list of individual values. For plot numbers,
+`c("gte.1", "lte.4")` includes `1`, `2`, `3`, and `4`, whereas
+`"in.(1,4)"` selects only `1` and `4`. This example combines that
+selection with ranges for terrain slope in degrees and stand age in years:
+
+```{r filter-values-and-ranges, eval = FALSE}
+plot_params <- list(
+  select = "interval_name,cluster_name,plot_name,terrain_slope,stand_age",
+  interval_name = "eq.bwi2022",
+  plot_name = "in.(1,4)",
+  terrain_slope = c("gte.0", "lte.90"),
+  stand_age = c("gte.1", "lte.300"),
+  order = "cluster_name.asc,plot_name.asc"
+)
+```
+
+### Filtering dates {#filtering-dates}
+
+Date ranges use the same operators as numeric ranges.
+The `acquisition_date` column is a date, so supply values in
+`YYYY-MM-DD` format:
+
+```{r filter-acquisition-dates, eval = FALSE}
+plot_params <- list(
+  select = "interval_name,cluster_name,plot_name,acquisition_date",
+  interval_name = "eq.bwi2022",
+  acquisition_date = c(
+    "gte.2022-01-01",
+    "lte.2022-12-31"
+  ),
+  order = "cluster_name.asc,plot_name.asc"
+)
+```
+
+When selecting `acquisition_date`, do NOT use the build-in sqlite method. The used SQLite package is not able to convert the format into correct sql values. Extract the data as a R dataframe.
+
+
+### Ordering {#ordering}
+
+Always choose an explicit `params$order` whose complete combination of
+columns uniquely identifies each returned row. A deterministic order
+prevents rows from being skipped or repeated at page boundaries.
+
+| Query                                    | Suitable ordering                                    |
+| ---------------------------------------- | ---------------------------------------------------- |
+| `cluster`                                | `"cluster_name.asc"`                                 |
+| `plot` with one fixed inventory interval | `"cluster_name.asc,plot_name.asc"`                   |
+| `plot` across inventory intervals        | `"interval_name.asc,cluster_name.asc,plot_name.asc"` |
+| Other tables with an `id` primary key    | `"id.asc"`                                           |
+
+
+Most if not all tables have `id` as an primary key or as a distinct identifier. 
+You can also inspect the schema and choose their primary key or
+another unique combination. Ordering columns do not need to appear in `select`.
+
+Separate multiple columns with commas. Use `.asc` for ascending or `.desc`
+for descending order. If the direction is omitted, ascending order is
+used.
+
+## Filtering by related plots with `filtering_options` {#filtering-options}
+
+`filtering_options` is an optional named list of plot-level criteria.
+It can filter a table using attributes of the plots related to its rows,
+without adding those plot attributes to the output.
+
+Supply ordinary values, **without** PostgREST prefixes such as `eq.` or
+`in.`. The supported options are:
+
+| Plot-table column     | Expected values                                                                 |
+| --------------------- | ------------------------------------------------------------------------------- |
+| `interval_name`       | Character values, such as `"bwi2022"`                                           |
+| `federal_state`       | Integer federal-state codes, the nme for the filter is plural: `federal_states` |
+| `growth_district`     | Integer growth-district codes; see below                                        |
+| `forest_office`       | Integer forest-office codes                                                     |
+| `municipality`        | Integer municipality codes                                                      |
+| `sampling_stratum`    | Integer sampling-stratum codes                                                  |
+| `property_type`       | Integer ownership/property-type codes                                           |
+| `property_size_class` | Integer property-size-class codes                                               |
+
+Several values within one option are alternatives (**OR**). Different
+options, and the filters already supplied in `params`, are combined with
+**AND**. For example:
+
+```{r filter-regional-clusters, eval = FALSE}
+regional_clusters <- gnfi_query(
+  table = "cluster",
+  params = list(
+    select = "cluster_name",
+    is_training = "eq.false",
+    order = "cluster_name.asc"
+  ),
+  filtering_options = list(
+    interval_name = "bwi2022",
+    federal_states = c(8, 9)
+  )
+)
+
+head(regional_clusters)
+```
+
+This retains non-training clusters with at least one `bwi2022` plot in
+Baden-Württemberg or Bavaria. It does not attach the plot's federal state
+to the returned cluster data.
+
+Active `filtering_options` are supported only in `inventory_archive`,
+for the following tables:
+
+| Tables                                                                                                                                                                                | Joined with plot on                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `cluster`,  `cluster_move`                                                                                                                                                            | `plot.cluster_id`                                                    |
+| `plot`, `plot_coordinates`, `plot_support_points`, `notes`, `tree`, `position`, `edges`, `regeneration`, `structure_lt4m`, `structure_gt4m`, `deadwood`, `subplots_relative_position` | `plot.id`                                                            |
+| `tree_coordinates`                                                                                                                                                                    | `plot.id` -> `tree.plot_id`; `tree.id` -> `tree_coordinates.tree_id` |
+
+The function first downloads all rows matching `params`, then applies
+this additional filtering locally, before export. Consequently,
+`filtering_options` does not reduce the initial table download. Restrict
+rows in `params` where possible. Aggregate selections cannot be combined
+with active `filtering_options`.
+
+`NULL`, `list()`, and individual `NULL` entries add no filters. Active
+options require non-empty vectors without `NA`; options other than
+`interval_name` accept integer codes, including their character
+representations.
+
+The `include_test_cluster` argument is only needed when filtering for `tree_coordinates`. In any other case, test-cluster could appear and should then be deleted manually.
+
+## Querying different schemas {#querying-different-schemas}
+
+A schema groups related database tables. The `accept_profile` argument
+chooses the schema, while `table` chooses a table inside it. Thus,
+`table = "tree"` can refer to different data depending on the profile.
+
+The default profile of `gnfi_query()` is `"inventory_archive"`.
+`database_structure()` accepts the following profiles:
+
+| Profile             | Use                                                                                                       |
+| ------------------- | --------------------------------------------------------------------------------------------------------- |
+| `inventory_archive` | Inventory tables; the default for `gnfi_query()`                                                          |
+| `lookup`            | Code lists and their labels                                                                               |
+| `derived_tmp`       | Derived variables; the API documentation currently identifies this as the source for inventory cycle 2022 |
+| `derived`           | An additional profile whose available tables can be inspected                                             |
+| `public`            | An additional profile whose available tables can be inspected                                             |
+
+
+```{r inspect-derived-schema, eval = FALSE}
+derived_schema <- database_structure(
+  accept_profile = "derived_tmp",
+  view = FALSE
+)
+
+head(derived_schema[, c("table", "column", "type", "format")], 8)
+```
+
+
+
+## Pagination with `limit` {#pagination}
+
+`gnfi_query()` retrieves **all rows matching the query** and follows
+successive pages automatically. Its `limit` argument sets the requested
+number of rows **per API response**, not the maximum number in the final
+result. The server may return fewer rows than requested which then is automatically corrected by the package.
+
+| Setting                             | Behaviour                                                                                          |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `limit = -1`, the default           | Retrieve all matching rows, requesting pages of 10,000                                             |
+| `limit = 1000`                      | Retrieve all matching rows, requesting pages of 1,000                                              |
+| `limit = 100000`                    | Retrieve all matching rows, requesting pages of 100,000; the server may impose a smaller page size |
+| `limit` or `offset` inside `params` | Rejected by the package                                                                            |
+
+Other negative values, zero, and non-integer values are invalid.
+Smaller page sizes can help with timeouts, but may make the download
+slower because they require more requests. Use row filters to reduce the
+result itself; `head()` only shortens the displayed result.
+
+`gnfi_query()` has no `page_size` argument. Other functions, including
+`get_weham_data()` and the lookup-view helpers, use that name for their
+requested page size.
+
+## Storing the output in CSV or SQLite {#storing-output}
+
+By default, `gnfi_query()` returns an R data frame. Enable `create_csv`,
+`create_sqlite`, or both to write the result to files.
+
+| Argument         | Default | Meaning                                                                         |
+| ---------------- | ------- | ------------------------------------------------------------------------------- |
+| `create_csv`     | `FALSE` | Write a CSV file                                                                |
+| `csv_name`       | `NULL`  | CSV path; `NULL` uses `<table>.csv`                                             |
+| `create_sqlite`  | `FALSE` | Write a SQLite table                                                            |
+| `sqlite_name`    | `NULL`  | Database path; `NULL` uses `<table>.sqlite`                                     |
+| `sqlite_table`   | `NULL`  | Table inside the database; `NULL` uses the API table name                       |
+| `return_data`    | `TRUE`  | Return the downloaded data in R                                                 |
+| `print_progress` | `TRUE`  | Print progress messages; export notifications may still be printed when `FALSE` |
+
+At least one of `return_data`, `create_csv`, and `create_sqlite` must be
+`TRUE`. Relative paths are resolved against `getwd()`. Existing CSV files and
+SQLite tables with the selected name are overwritten; a SQLite database
+is created if needed.
+
+This example writes a CSV file and also returns the data:
+
+```{r export-clusters-csv, eval = FALSE}
+cluster_data <- gnfi_query(
+  table = "cluster",
+  params = list(
+    select = "cluster_name,is_training",
+    is_training = "eq.false",
+    order = "cluster_name.asc"
+  ),
+  create_csv = TRUE,
+  csv_name = "clusters.csv"
+)
+```
+
+
+Column types are inferred from the API's CSV response.
+Check the resulting types, especially for dates, identifiers, and missing
+values. Do not use the SQLite functionality when selecting dates with the `YYYY-MM-DD` format. It will convert the value in an integer.
+
+
+# Creating a WEHAM database {#creating-a-weham-database}
+
+`get_weham_data()` runs a predefined import workflow and writes three
+tables to a SQLite database:
+
+| Table         | Contents                                                       |
+| ------------- | -------------------------------------------------------------- |
+| `WEHAMI_WZP`  | Tree records matched with derived tree metrics                 |
+| `WEHAMI_Jung` | Individual regeneration records                                |
+| `WEHAMI_Eck`  | Attributes of plots occurring in `WEHAMI_WZP` or `WEHAMI_Jung` |
+
+Existing tables with these names are replaced. The three writes run in
+one transaction, so a failed import does not leave a mixture of old and
+new output tables.
+
+| Parameter                       | Default                            | Meaning                                                                                                                                                 |
+| ------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `db_path`                       | Required                           | Path to the SQLite database, created if absent; the parent directory must exist and be writable                                                         |
+| `interval_name`                 | Required                           | Inventory interval to import; accepted names are listed below                                                                                           |
+| `share_of_natural_regeneration` | `100`                              | Whole-number percentage from 0 to 100, written as the same user-supplied `NatVjProz` value for every output plot; it is not estimated from the API data |
+| `filtering_options`             | `NULL`                             | Optional [plot-level filters](#filtering-options), applied locally after download; an interval filter must include the requested `interval_name`        |
+| `include_test_cluster`          | `FALSE`                            | Exclude training clusters when `FALSE`; allow them in the cluster list when `TRUE`                                                                      |
+| `rename`                        | `TRUE`                             | Use WEHAM column names, for example `cluster_name` becomes `Tnr` and `plot_name` becomes `Enr`; `FALSE` retains API names for the source fields         |
+| `print_progress`                | `TRUE`                             | Print progress messages                                                                                                                                 |
+| `url`                           | `"https://ci.thuenen.de/rest/v1/"` | HTTPS base URL of the API; normally leave unchanged                                                                                                     |
+| `apikey`                        | `NULL`                             | Use the package's public API key when `NULL`, or supply a different key                                                                                 |
+| `step_size`                     | `1000`                             | Number of cluster identifiers per batch; each batch may require multiple API requests                                                                   |
+| `page_size`                     | `10000`                            | Requested rows per response for cluster retrieval, plot batches, and derived data; independent of `step_size`                                           |
+
+The interval validator accepts `bwi1987`, `bwi1992`, `bwi2002`,
+`bwi2012`, `bwi2022`, `ci2008`, `ci2012`, `ci2017`, and `ci2027`.
+Acceptance of an interval name does **not** guarantee that all required
+tree, regeneration, and derived data are available for it.
+
+The current implementation always retrieves derived tree data from
+`derived_tmp`. Changing `interval_name` does not select another derived
+schema. The
+[official API documentation](https://thuenen-forest-ecosystems.github.io/TFM-Documentation/api/getting-started.html)
+identifies `derived_tmp` as the source for inventory cycle 2022; other
+intervals require matching metrics in that same source to complete this
+workflow.
+
+Measured and derived trees are matched by their complete `intkey` values.
+If no tree records match derived metrics, the import stops. If only some
+records lack matching metrics, it warns and **omits those tree rows from
+`WEHAMI_WZP`**. Regeneration records are retained individually. The
+workflow also stops if no tree or regeneration records are available, or
+if the optional filters leave either group empty.
+
+The following example imports `bwi2022` and retains plots in
+Baden-Württemberg and Bavaria. Omit `filtering_options` to apply no
+additional regional restriction. Regional filtering changes the output,
+but does not reduce the initial inventory downloads.
+
+```{r create-weham-database, eval = FALSE}
+get_weham_data(
+  db_path = "wehami_input.sqlite",
+  interval_name = "bwi2022",
+  share_of_natural_regeneration = 100,
+  filtering_options = list(federal_states = c(8, 9)),
+  include_test_cluster = FALSE,
+  rename = TRUE,
+  print_progress = TRUE,
+  step_size = 1000,
+  page_size = 10000
+)
+```
+
+The function returns `NULL` invisibly. Inspect its output by opening the
+SQLite database. This helper lists its tables and checks the number of
+tree rows while closing the connection when it finishes:
+
+```{r inspect-weham-database, eval = FALSE}
+inspect_weham_database <- function(db_path) {
+  conn <- DBI::dbConnect(RSQLite::SQLite(), db_path)
+  on.exit(DBI::dbDisconnect(conn), add = TRUE)
+
+  list(
+    tables = DBI::dbListTables(conn),
+    tree_rows = DBI::dbGetQuery(
+      conn,
+      "SELECT COUNT(*) AS n FROM WEHAMI_WZP"
+    )
+  )
+}
+
+inspect_weham_database("wehami_input.sqlite")
+```
+
+See the [Name conversions vignette](name-conversions.html) for further
+WEHAM column names.
+
+# API key and URL {#api-key-and-url}
+
+Both `gnfi_query()` and `get_weham_data()` supply the public API URL and
+key normally needed for the Thünen API. Override them only when using
+different connection settings.
+
+For your own API instance, you can store a key in the environment variable
+`THUENEN_API_KEY` and pass it with `Sys.getenv()`.
+The URL below is a **placeholder**, not a working Thünen endpoint.
+Replace it with your API's actual base URL and set the environment
+variable before running the example:
+
+```{r tests, eval = FALSE}
+cluster_data <- gnfi_query(
+  table = "cluster",
+  params = list(
+    select = "cluster_name",
+    order = "cluster_name.asc"
+  ),
+  url = "https://example.org/rest/v1/",
+  apikey = Sys.getenv("THUENEN_API_KEY")
+)
+```
+
+Current public connection settings are shown in the API examples in the
+[Thünen data structure documentation](https://thuenen-forest-ecosystems.github.io/TFM-Documentation/api/data-structure.html).
+
+# Testing the package {#tests}
+
+Run tests from the package source directory containing DESCRIPTION. The database_overview test requires internet access. It checks API access and compares the current API structure with saved reference metadata.
+
+```{r custom-api-connection, eval = FALSE}
+# All tests
+testthat::test_local()
+
+# Only the online database overview test
+testthat::test_local(filter = "^test-api-test$")
+
+# All tests except database overview
+testthat::test_local(filter = "^test-api-test$", invert = TRUE)
+```
+
+If the structure changes but the API still returns data, `gnfi_query()` should continue to work with valid tables and columns. However, `get_weham_data()`, `filtering_options`, and the examples in this vignette may fail. Contact the package maintainer and check whether an updated gnfidatR version is available.
+
+# Disclaimer {#disclaimer}
+
+`gnfidatR` is not developed, maintained, or officially supported by the Thünen
+Institute. Changes to the API, schemas, table names, authentication, or
+response formats may affect the package.
+
+For package bugs, contact its `Maintainer`.
+
+
+For API problems and information about direct requests, consult the
+[official Thünen API documentation](https://thuenen-forest-ecosystems.github.io/TFM-Documentation/api/getting-started.html)
+and its
+[issue tracker](https://github.com/Thuenen-Forest-Ecosystems/TFM-Server/issues).
+Direct API access can help diagnose a problem, but does not automatically
+resolve a package error.
+
+The API documentation recommends filtered queries rather than bulk
+extraction and provides a separate
+[full-database download route](https://thuenen-forest-ecosystems.github.io/TFM-Documentation/api/getting-started.html#data-only).
+Consider that route for complete datasets. The WEHAM workflow may involve
+large downloads even when its final output is restricted with
+`filtering_options`.
