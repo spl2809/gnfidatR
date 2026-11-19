@@ -15,7 +15,9 @@
 #' runs in case of server issues.
 #'
 #' @returns data.frame with cluster coordinates (optional)
-#' @note Function needs package 'sf'. Please install if not available.
+#' @note Function needs package 'sf'. Please install if not available. Currently
+#' spatial filtering is not available in \code{\link{gnfi_query}}. But feel free
+#' to write your own filtering steps after data retrieval using this function.
 #'
 #' @details Function accesses the Thuenen geoserver to download anonymized
 #' coordinates

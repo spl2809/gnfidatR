@@ -39,7 +39,9 @@ of the NFI clusters. For more information about the data see
 https://bwi.info/download/de/bwi-basisdaten/_Hinweise_BWI-Koordinaten.pdf?
 }
 \note{
-Function needs package 'sf'. Please install if not available.
+Function needs package 'sf'. Please install if not available. Currently
+spatial filtering is not available in \code{\link{gnfi_query}}. But feel free
+to write your own filtering steps after data retrieval using this function.
 }
 \references{
 Thuenen-Institut: \emph{Informationen zur Nutzung / Weitergabe
