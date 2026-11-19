@@ -1,6 +1,6 @@
 Package: gnfidatR
 Title: Download Data of the German National Forest Inventory
-Version: 0.0.0.1
+Version: 0.0.1
 Authors@R:
     c(
       person("Nils", "Steuernagel",
