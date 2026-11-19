@@ -5,4 +5,5 @@ inst/doc
 .Rhistory
 *.sqlite-shm
 *.sqlite-wal
+gnfidatR.Rproj
 

@@ -107,8 +107,7 @@ Preparing WEHAM input data requires processing several inventory datasets and co
 The package focuses on data access and preparation; it does not replace the WEHAM simulation model itself.
 
 ## Development
-
-This project is currently under active development.
+The Thünen API is still under development, with minor changes anticipated over the coming year. The package will be updated accordingly as these changes are implemented.
 
 Contributions, bug reports and suggestions are welcome. Please use the GitHub issue tracker for:
 

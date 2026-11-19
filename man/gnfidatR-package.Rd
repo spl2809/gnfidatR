@@ -9,11 +9,11 @@
 Tools for accessing data of the German National Forest Inventory
 }
 \author{
-\strong{Maintainer}: Stefan Paul \email{stefan.paul@forst.bwl.de}
+\strong{Maintainer}: Stefan Paul \email{stefan.paul@futureforests.uni-freiburg.de}
 
 Authors:
 \itemize{
-  \item Stefan Paul \email{stefan.paul@forst.bwl.de}
+  \item Stefan Paul \email{stefan.paul@futureforests.uni-freiburg.de}
   \item Nils Steuernagel \email{nils.steuernagel@gmail.com}
 }
 

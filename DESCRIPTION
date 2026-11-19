@@ -1,13 +1,13 @@
 Package: gnfidatR
 Title: Download Data of the German National Forest Inventory
-Version: 0.0.0.9000
+Version: 0.0.0.1
 Authors@R:
     c(
       person("Nils", "Steuernagel",
              email = "nils.steuernagel@gmail.com",
              role = c("aut")),
       person("Stefan", "Paul",
-             email = "stefan.paul@forst.bwl.de",
+             email = "stefan.paul@futureforests.uni-freiburg.de",
              role = c("aut", "cre")),
       person("Jan", "Schick",
              email = "jan.schick@wwd.uni-freiburg.de",
