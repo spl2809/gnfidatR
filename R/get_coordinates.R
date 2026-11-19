@@ -29,9 +29,7 @@
 #' \url{https://bwi.info/download/de/bwi-basisdaten/_Hinweise_BWI-Koordinaten.pdf}
 #'
 #' @seealso
-#' \code{\link{get_cluster_ids_from_shapefile}},
-#' \url{https://gdi.thuenen.de/geoserver/wo-bwi/bwi-tnr-ano/wfs}
-#'
+#' \code{\link{get_cluster_ids_from_shapefile}}
 #'
 #' @export
 #' @author Stefan Paul

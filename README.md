@@ -20,6 +20,13 @@ Main functionalities include:
 
 ## Installation
 
+The package can be installed directly from CRAN:
+
+```r
+install.packages("gnfidatR")
+```
+
+
 The development version can be installed directly from the GitHub repository:
 
 ```r
@@ -27,18 +34,6 @@ The development version can be installed directly from the GitHub repository:
 remotes::install_github("spl2809/gnfidatR")
 ```
 
-Alternatively, clone the repository and install the package locally:
-
-```bash
-git clone <REPOSITORY_URL>
-```
-
-Then install it from R:
-
-```r
-# install.packages("devtools")
-devtools::install()
-```
 
 ## Getting started
 
