@@ -16,7 +16,7 @@ Authors@R:
 Description: Provides easy access to data from the German National Forest Inventory
     supplied by the Thünen Institute. Additionally, the package provides predefined
     functions to generate input databases for the forest growth simulator WEHAM.
-License: GPL-3
+License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
 Imports:
