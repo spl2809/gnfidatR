@@ -3,3 +3,4 @@
 ^\.github$
 gnfidatR.Rproj
 ^LICENSE\.md$
+^cran-comments\.md$

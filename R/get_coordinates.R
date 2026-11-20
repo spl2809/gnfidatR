@@ -26,7 +26,6 @@
 #' @references
 #' Thuenen-Institut: \emph{Informationen zur Nutzung / Weitergabe
 #' anonymisierter Trakt-Koordinaten der Bundeswaldinventur}.
-#' \url{https://bwi.info/download/de/bwi-basisdaten/_Hinweise_BWI-Koordinaten.pdf}
 #'
 #' @seealso
 #' \code{\link{get_cluster_ids_from_shapefile}}

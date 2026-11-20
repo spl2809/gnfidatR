@@ -2,7 +2,7 @@
 
 **Access, retrieve and process data from the German National Forest Inventory (Bundeswaldinventur, BWI) in R.**
 
-`gnfidatR` provides an R interface to data from the **German National Forest Inventory (Bundeswaldinventur, BWI)** supplied by the [Thünen Institute](https://www.thuenen.de/). The package facilitates retrieving, filtering and processing inventory data through the Thünen Institute's REST API. It also provides functionality for preparing standardized input databases for the forest growth simulator **WEHAM** (Waldentwicklungs- und Holzaufkommensmodellierung).
+`gnfidatR` provides an R interface to data from the **German National Forest Inventory (Bundeswaldinventur, BWI)** supplied by the Thuenen Institute. The package facilitates retrieving, filtering and processing inventory data through the Thuenen Institute's REST API. It also provides functionality for preparing standardized input databases for the forest growth simulator **WEHAM** (Waldentwicklungs- und Holzaufkommensmodellierung).
 
 
 ## Features
@@ -11,7 +11,7 @@ The package aims to simplify access to German National Forest Inventory data and
 
 Main functionalities include:
 
-* **API access:** Retrieve BWI data directly from the Thünen Institute's REST API.
+* **API access:** Retrieve BWI data directly from the Thuenen Institute's REST API.
 * **Database inspection:** Explore available API schemas, tables, views and column metadata.
 * **Data retrieval and filtering:** Access and filter inventory plots and associated tree data.
 * **Spatial information:** Retrieve cluster identifiers and coordinates, including functionality for working with shapefiles.
@@ -82,12 +82,9 @@ See the function documentation for available settings, data options and output s
 
 The **Bundeswaldinventur (BWI)** is a nationwide inventory of forests in Germany. It provides comprehensive information on forest area, tree species composition, growing stock, increment, forest structure and other characteristics of German forests.
 
-The BWI data used by this package are supplied by the **Thünen Institute**.
+The BWI data used by this package are supplied by the **Thuenen Institute**.
 
-Further information:
-
-* [Thünen Institute – Bundeswaldinventur](https://www.thuenen.de/)
-* [Bundeswaldinventur](https://www.bundeswaldinventur.de/)
+Further information see the webpages of the Thuenen Institute or the official NFI/BWI sources.
 
 Please refer to the original data provider for information on data licensing, methodology, interpretation and appropriate citation of the BWI data.
 
@@ -102,7 +99,7 @@ Preparing WEHAM input data requires processing several inventory datasets and co
 The package focuses on data access and preparation; it does not replace the WEHAM simulation model itself.
 
 ## Development
-The Thünen API is still under development, with minor changes anticipated over the coming year. The package will be updated accordingly as these changes are implemented.
+The Thuenen API is still under development, with minor changes anticipated over the coming year. The package will be updated accordingly as these changes are implemented.
 
 Contributions, bug reports and suggestions are welcome. Please use the GitHub issue tracker for:
 
@@ -128,6 +125,6 @@ See the `LICENSE` file for the full license text.
 
 ## Disclaimer
 
-`gnfidatR` is an independent R package for accessing and processing data provided by the Thünen Institute. It is not an official product of the Thünen Institute unless explicitly stated otherwise.
+`gnfidatR` is an independent R package for accessing and processing data provided by the Thuenen Institute. It is not an official product of the Thuenen Institute unless explicitly stated otherwise.
 
 Please consult the original data provider for authoritative information regarding the BWI data, methodology and data use.
