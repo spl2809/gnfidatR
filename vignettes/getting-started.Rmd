@@ -373,6 +373,7 @@ used.
 `filtering_options` is an optional named list of plot-level criteria.
 It can filter a table using attributes of the plots related to its rows,
 without adding those plot attributes to the output.
+In particular these options are useful if you want to download tree-data but onl for specific plots.
 
 Supply ordinary values, **without** PostgREST prefixes such as `eq.` or
 `in.`. The supported options are:
@@ -392,13 +393,13 @@ Several values within one option are alternatives (**OR**). Different
 options, and the filters already supplied in `params`, are combined with
 **AND**. For example:
 
-```{r filter-regional-clusters, eval = FALSE}
-regional_clusters <- gnfi_query(
-  table = "cluster",
+```{r filter-beech-by-states, eval = FALSE}
+southern_beeches <- gnfi_query(
+  table = "tree",
   params = list(
-    select = "cluster_name",
-    is_training = "eq.false",
-    order = "cluster_name.asc"
+    select = "intkey,tree_species,dbh",
+    tree_species = "eq.100",
+    order = "id.asc"
   ),
   filtering_options = list(
     interval_name = "bwi2022",
@@ -406,11 +407,11 @@ regional_clusters <- gnfi_query(
   )
 )
 
-head(regional_clusters)
+head(southern_beeches)
 ```
 
-This retains non-training clusters with at least one `bwi2022` plot in
-Baden-Württemberg or Bavaria. It does not attach the plot's federal state
+This outputs beech trees (tree species = 100) from the fourth national forest inventory (`bwi2022`) that are placed in
+Baden-Württemberg or Bavaria (federal_states = 8 or 9). It does not attach the plot's federal state
 to the returned cluster data.
 
 Active `filtering_options` are supported only in `inventory_archive`,
@@ -433,7 +434,8 @@ options require non-empty vectors without `NA`; options other than
 `interval_name` accept integer codes, including their character
 representations.
 
-The `include_test_cluster` argument is only needed when filtering for `tree_coordinates`. In any other case, test-cluster could appear and should then be deleted manually.
+The `include_test_cluster` argument is only needed when filtering for `tree_coordinates`.
+At the time of writing this vignette (24.11.2026), the table `tree_coordinates` does not hold any data.
 
 ## Querying different schemas {#querying-different-schemas}
 
@@ -527,6 +529,8 @@ Column types are inferred from the API's CSV response.
 Check the resulting types, especially for dates, identifiers, and missing
 values. Do not use the SQLite functionality when selecting dates with the `YYYY-MM-DD` format. It will convert the value in an integer.
 
+
+## More examples
 
 # Creating a WEHAM database {#creating-a-weham-database}
 
