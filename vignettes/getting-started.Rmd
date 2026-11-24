@@ -690,3 +690,21 @@ extraction and provides a separate
 Consider that route for complete datasets. The WEHAM workflow may involve
 large downloads even when its final output is restricted with
 `filtering_options`.
+
+# Different Error Output
+
+## SSL connect error
+The following Error message occurs if the Server is not reachable. 
+This can occur if you have no internet connection or when specifying the wrong table, the wrong url or if the server, hosted by the Thünen Institute, is down.
+
+```{r SSL-connect-error, eval = FALSE}
+Error in `.perform()` at R/get_single_tables.R:65:5:
+! Failed to perform HTTP request.
+Caused by error in `curl::curl_fetch_memory()`:
+! SSL connect error [ci.thuenen.de]:
+Recv failure: Connection was reset
+```
+1. Check your Internet connection
+1. Check if the specified table is correct: compare your table with the ones specified in `database_structure("inventory_archive)`. If you don't use "inventory_archive" profile but the "lookup" or "derived_tmp" profile replace the name.
+2. If use specifed an URL check if it is correct
+3. Open a terminal an input `ping ci.thuenen.de` or `ping <server_domain>`. If this fails the server is down. Contact the Thünen Institute.
