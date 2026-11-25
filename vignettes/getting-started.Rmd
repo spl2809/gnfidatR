@@ -707,3 +707,28 @@ Recv failure: Connection was reset
 1. Check if the specified table is correct: compare your table with the ones specified in `database_structure("inventory_archive)`. If you don't use "inventory_archive" profile but the "lookup" or "derived" profile replace the name.
 2. If use specifed an URL check if it is correct
 3. Open a terminal an input `ping ci.thuenen.de` or `ping <server_domain>`. If this fails the server is down. Contact the Thünen Institute.
+
+
+## Timeout error
+
+If the query is to complicated, the server needs to long to calculate the resulting table.
+The server then throws a timeout error: 
+
+```{r timeout-error, eval = FALSE}
+Error in `.perform()` at R/get_single_tables.R:65:5:
+! HTTP 500 Internal Server Error.
+ℹ API-Error: {"code":"57014","details":null,"hint":null,"message":"canceling statement due to statement timeout"}
+```
+
+The execution time depends on how much work the database must perform,
+including filtering, sorting, and counting matching rows. Even a query
+that ultimately returns only a few rows can require substantial processing.
+
+In `gnfi_query()`, `filtering_options` are applied locally after the data
+have been downloaded. These options therefore do not restrict the initial
+download. The function also requests an exact count of all matching rows
+on the first page, which can add considerable processing time.
+
+To reduce the workload, first identify the relevant plots and then query
+the desired table using their `plot_id` values in small batches. This
+allows the server to restrict the data before returning them.
