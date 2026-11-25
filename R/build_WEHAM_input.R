@@ -415,7 +415,8 @@ get_weham_data <- function(db_path,
     get_derived_tree(
       url = url,
       apikey = apikey,
-      limit = page_size
+      limit = page_size,
+      interval_name = interval_name
     )
   }
   if (print_progress) {

@@ -4,7 +4,7 @@
 \alias{build_wzp}
 \title{Join plot/tree data with derived metrics and write WEHAMI_WZP to SQLite}
 \usage{
-build_wzp(url, apikey, conn, plots_and_trees, rename, page_size)
+build_wzp(url, apikey, conn, plots_and_trees, derived, rename, page_size)
 }
 \arguments{
 \item{url}{Base URL of the REST API.}
@@ -14,6 +14,8 @@ build_wzp(url, apikey, conn, plots_and_trees, rename, page_size)
 \item{conn}{An open DBI connection to the SQLite database.}
 
 \item{plots_and_trees}{Data frame returned by \code{plots_and_trees_fetch()}.}
+
+\item{derived}{Data of the derived tree metrics.}
 
 \item{rename}{Logical; if TRUE columns are renamed to German
 short codes (Tnr, Enr, ...) used by downstream WEHAM models.}

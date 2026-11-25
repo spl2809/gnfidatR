@@ -396,7 +396,8 @@ test_that("get_derived_tree keeps full intkeys and uses the derived schema", {
   actual <- get_derived_tree(
     url = api$url,
     apikey = api$apikey,
-    limit = 2L
+    limit = 2L,
+    interval_name = "bwi2022"
   )
 
   expect_identical(actual$intkey, gnfidatR_tree_fixture()$intkey)
@@ -457,7 +458,8 @@ test_that("get_weham_data writes three consistent WEHAM tables", {
     regeneration_fetch = function(...) {
       gnfidatR_regeneration_fixture()
     },
-    get_derived_tree = function(...) {
+    get_derived_tree = function(url, apikey, limit, interval_name) {
+      expect_identical(interval_name, "bwi2022")
       gnfidatR_derived_fixture()
     },
     .package = "gnfidatR"
@@ -514,7 +516,8 @@ test_that("get_weham_data rolls back earlier writes after a late failure", {
     regeneration_fetch = function(...) {
       gnfidatR_regeneration_fixture()
     },
-    get_derived_tree = function(...) {
+    get_derived_tree = function(url, apikey, limit, interval_name) {
+      expect_identical(interval_name, "bwi2022")
       gnfidatR_derived_fixture()
     },
     build_eck = function(...) {

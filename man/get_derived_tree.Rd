@@ -4,7 +4,7 @@
 \alias{get_derived_tree}
 \title{Download derived per-tree metrics (trees_per_hectare, diameter_30perc)}
 \usage{
-get_derived_tree(url, apikey, limit)
+get_derived_tree(url, apikey, limit, interval_name)
 }
 \arguments{
 \item{url}{Base URL of the REST API.}
@@ -12,6 +12,8 @@ get_derived_tree(url, apikey, limit)
 \item{apikey}{API key.}
 
 \item{limit}{Requested rows per page; -1 uses automatic pages of 10000.}
+
+\item{interval_name}{Interval of the requested data.}
 }
 \value{
 A data frame with intkey, trees_per_hectare, and diameter_30perc.
