@@ -6,13 +6,6 @@ test_that("build_wzp joins metrics by complete inventory-specific intkeys", {
   wrong_inventory$dbh <- 999
   derived <- rbind(derived, wrong_inventory)
 
-  local_mocked_bindings(
-    get_derived_tree = function(...) {
-      derived
-    },
-    .package = "gnfidatR"
-  )
-
   connection <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
   withr::defer(DBI::dbDisconnect(connection))
   api <- gnfidatR_test_api()
@@ -22,6 +15,7 @@ test_that("build_wzp joins metrics by complete inventory-specific intkeys", {
     apikey = api$apikey,
     conn = connection,
     plots_and_trees = trees,
+    derived = derived,
     rename = TRUE,
     page_size = 2L
   )
@@ -51,13 +45,6 @@ test_that("build_wzp joins metrics by complete inventory-specific intkeys", {
 })
 
 test_that("build_wzp supports original column names", {
-  local_mocked_bindings(
-    get_derived_tree = function(...) {
-      gnfidatR_derived_fixture()
-    },
-    .package = "gnfidatR"
-  )
-
   connection <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
   withr::defer(DBI::dbDisconnect(connection))
   api <- gnfidatR_test_api()
@@ -67,6 +54,7 @@ test_that("build_wzp supports original column names", {
     apikey = api$apikey,
     conn = connection,
     plots_and_trees = gnfidatR_tree_fixture(),
+    derived = gnfidatR_derived_fixture(),
     rename = FALSE,
     page_size = 2L
   )
@@ -94,13 +82,6 @@ test_that("build_wzp supports original column names", {
 test_that("build_wzp rejects ambiguous and missing tree intkeys", {
   derived <- gnfidatR_derived_fixture()
 
-  local_mocked_bindings(
-    get_derived_tree = function(...) {
-      derived
-    },
-    .package = "gnfidatR"
-  )
-
   connection <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
   withr::defer(DBI::dbDisconnect(connection))
   api <- gnfidatR_test_api()
@@ -113,6 +94,7 @@ test_that("build_wzp rejects ambiguous and missing tree intkeys", {
       apikey = api$apikey,
       conn = connection,
       plots_and_trees = trees,
+      derived = derived,
       rename = TRUE,
       page_size = 2L
     ),
@@ -128,6 +110,7 @@ test_that("build_wzp rejects ambiguous and missing tree intkeys", {
       apikey = api$apikey,
       conn = connection,
       plots_and_trees = trees,
+      derived = derived,
       rename = TRUE,
       page_size = 2L
     ),
@@ -142,6 +125,7 @@ test_that("build_wzp rejects ambiguous and missing tree intkeys", {
       apikey = api$apikey,
       conn = connection,
       plots_and_trees = trees,
+      derived = derived,
       rename = TRUE,
       page_size = 2L
     ),
@@ -151,13 +135,6 @@ test_that("build_wzp rejects ambiguous and missing tree intkeys", {
 
 test_that("build_wzp warns for partial matches and rejects missing matches", {
   derived <- gnfidatR_derived_fixture()[-1L, ]
-
-  local_mocked_bindings(
-    get_derived_tree = function(...) {
-      derived
-    },
-    .package = "gnfidatR"
-  )
 
   connection <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
   withr::defer(DBI::dbDisconnect(connection))
@@ -169,6 +146,7 @@ test_that("build_wzp warns for partial matches and rejects missing matches", {
       apikey = api$apikey,
       conn = connection,
       plots_and_trees = gnfidatR_tree_fixture(),
+      derived = derived,
       rename = TRUE,
       page_size = 2L
     ),
@@ -184,6 +162,7 @@ test_that("build_wzp warns for partial matches and rejects missing matches", {
       apikey = api$apikey,
       conn = connection,
       plots_and_trees = gnfidatR_tree_fixture(),
+      derived = derived,
       rename = TRUE,
       page_size = 2L
     ),
@@ -191,9 +170,7 @@ test_that("build_wzp warns for partial matches and rejects missing matches", {
   )
 })
 
-test_that("build_wzp keeps empty schemas without downloading metrics", {
-  local_mocked_bindings(get_derived_tree = gnfidatR_no_download, .package = "gnfidatR")
-
+test_that("build_wzp keeps empty schemas with supplied empty metrics", {
   connection <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
   withr::defer(DBI::dbDisconnect(connection))
   api <- gnfidatR_test_api()
@@ -203,6 +180,7 @@ test_that("build_wzp keeps empty schemas without downloading metrics", {
     apikey = api$apikey,
     conn = connection,
     plots_and_trees = gnfidatR_tree_fixture()[FALSE, ],
+    derived = gnfidatR_derived_fixture()[FALSE, ],
     rename = TRUE,
     page_size = 2L
   )
@@ -632,7 +610,7 @@ test_that("get_weham_data leaves no database for empty or unmatched data", {
       url = api$url,
       apikey = api$apikey
     ),
-    "No tree or regeneration"
+    "No tree data was found"
   )
   expect_false(file.exists(path))
 
