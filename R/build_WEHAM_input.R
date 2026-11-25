@@ -16,25 +16,15 @@
 #' @keywords internal
 #' @return NULL invisibly (called for its side-effect of writing to SQLite).
 #' @author Nils Steuernagel
-build_wzp <- function(url, apikey, conn, plots_and_trees, rename, page_size) {
-  derived <- if (nrow(plots_and_trees) == 0L) {
-    data.frame(
-      intkey = character(),
-      dbh = numeric(),
-      tree_height = numeric(),
-      stem_height = numeric(),
-      trees_per_hectare = numeric(),
-      diameter_30perc = numeric()
-    )
-  } else {
-    get_derived_tree(url, apikey, page_size)
-  }
-
+build_wzp <- function(url, apikey, conn, plots_and_trees, derived, rename, page_size) {
   if (!"intkey" %in% names(plots_and_trees) || !"intkey" %in% names(derived)) {
     stop("Full tree intkeys are required to join derived metrics safely.", call. = FALSE)
   }
-  if (anyNA(plots_and_trees$intkey) || anyNA(derived$intkey) ||
-    anyDuplicated(derived$intkey)) {
+  if (
+    anyNA(plots_and_trees$intkey) ||
+      anyNA(derived$intkey) ||
+      anyDuplicated(derived$intkey)
+  ) {
     stop("Tree intkeys must be non-missing; derived intkeys must be unique.", call. = FALSE)
   }
 
@@ -323,7 +313,7 @@ get_weham_data <- function(db_path,
 
   # -- 2. Plot and tree data ---------------------------------------------------
   if (print_progress) {
-    log_step("Loading plot and tree data (this may take a while)...")
+    log_step("Loading plot and tree data ...")
     t0 <- proc.time()[["elapsed"]]
   }
   PaT <- plots_and_trees_fetch(
@@ -334,6 +324,25 @@ get_weham_data <- function(db_path,
     step = json_step,
     page_size = page_size
   )
+  if (nrow(PaT) == 0L) {
+    stop("No tree data was found.",
+      call. = FALSE
+    )
+  }
+  if (print_progress) {
+    log_step(
+      paste(
+        "Finished loading plots and trees. Count unique trees :",
+        nrow(PaT)
+      ),
+      t0
+    )
+  }
+  # -- 3. Plot and tree data ---------------------------------------------------
+  if (print_progress) {
+    log_step("Loading regeneration data ...")
+    t0 <- proc.time()[["elapsed"]]
+  }
   PaT_reg <- regeneration_fetch(
     url = url,
     apikey = apikey,
@@ -343,20 +352,20 @@ get_weham_data <- function(db_path,
     page_size = page_size
   )
 
-  if (nrow(PaT) == 0L || nrow(PaT_reg) == 0L) {
-    stop("No tree or regeneration data were found for the requested inventory.",
+  if (nrow(PaT_reg) == 0L) {
+    stop("No regeneration data was found for the requested inventory.",
       call. = FALSE
     )
   }
   if (print_progress) {
     log_step(
-      paste("Finished loading plots and trees. Count unique trees :", nrow(PaT)),
+      paste("Finished loading regeneration data."),
       t0
     )
   }
 
-  # -- Optional filtering of the downloaded plots ------------------------------
   if (length(filtering_options) > 0L) {
+    # -- Optional filtering of the downloaded plots ----------------------------
     if (print_progress) {
       log_step("Start filtering the plot data...")
       t0 <- proc.time()[["elapsed"]]
@@ -387,7 +396,32 @@ get_weham_data <- function(db_path,
     }
   }
 
-  # -- 3. Open database --------------------------------------------------------
+  # -- 4. Derived tree data ----------------------------------------------------
+  if (print_progress) {
+    log_step("Loading derived tree data ...")
+    t0 <- proc.time()[["elapsed"]]
+  }
+  derived_trees <- if (nrow(PaT) == 0L) {
+    data.frame(
+      intkey = character(),
+      dbh = numeric(),
+      tree_height = numeric(),
+      stem_height = numeric(),
+      trees_per_hectare = numeric(),
+      diameter_30perc = numeric()
+    )
+  } else {
+    get_derived_tree(
+      url = url,
+      apikey = apikey,
+      limit = page_size
+    )
+  }
+  if (print_progress) {
+    log_step("Finished loading derived tree data", t0)
+  }
+
+  # -- 5. Open database --------------------------------------------------------
   if (print_progress) {
     log_step("Opening SQLite database ...")
   }
@@ -396,17 +430,17 @@ get_weham_data <- function(db_path,
 
 
   DBI::dbWithTransaction(conn, {
-    # -- 4. Winkelzählprobe ------------------------------------------------------
+    # -- 6. Winkelzählprobe ----------------------------------------------------
     if (print_progress) {
       log_step("Writing WEHAMI_WZP ...")
       t0 <- proc.time()[["elapsed"]]
     }
-    build_wzp(url, apikey, conn, PaT, rename, page_size)
+    build_wzp(url, apikey, conn, PaT, derived_trees, rename, page_size)
     if (print_progress) {
       log_step("Finished WEHAMI_WZP", t0)
     }
 
-    # -- 5. Jungholz -------------------------------------------------------------
+    # -- 7. Jungholz -----------------------------------------------------------
     if (print_progress) {
       log_step("Writing WEHAMI_Jung ...")
       t0 <- proc.time()[["elapsed"]]
@@ -420,7 +454,7 @@ get_weham_data <- function(db_path,
       log_step("Finished WEHAMI_Jung", t0)
     }
 
-    # -- 6. Tracktecken-----------------------------------------------------------
+    # -- 8. Tracktecken---------------------------------------------------------
     if (print_progress) {
       log_step("Writing WEHAMI_Eck ...")
       t0 <- proc.time()[["elapsed"]]
