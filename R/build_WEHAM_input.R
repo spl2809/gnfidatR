@@ -494,7 +494,8 @@ plots_and_trees_fetch <- function(url, apikey, cluster_liste, interval_name, ste
       "intkey,tree_number,stand_layer,tree_species,stem_breakage,",
       "stem_form,tree_age",
       ")"
-    )
+    ),
+    order = "id.asc"
   )
 
   df <- fetch_join_table(
@@ -537,7 +538,8 @@ regeneration_fetch <- function(url, apikey, cluster_liste, interval_name, step, 
       "acquisition_date,property_size_class,management_type,harvest_restriction,",
       "stand_layer_regeneration,sampling_stratum,",
       "regeneration!inner(intkey,tree_species,tree_size_class,tree_count)"
-    )
+    ),
+    order = "id.asc"
   )
 
   jung <- fetch_join_table(
@@ -570,9 +572,12 @@ regeneration_fetch <- function(url, apikey, cluster_liste, interval_name, step, 
 #' @return A data frame with intkey, trees_per_hectare, and diameter_30perc.
 #' @author Nils Steuernagel
 
-get_derived_tree <- function(url, apikey, limit) {
+get_derived_tree <- function(url, apikey, limit, interval_name = "bwi2022") {
   params <- list(
-    select = "intkey,dbh,tree_height,stem_height,trees_per_hectare,diameter_30perc",
+    select = paste0(
+      "intkey,dbh,tree_height,stem_height,trees_per_hectare,diameter_30perc"
+    ),
+    intkey = paste0("like.*", interval_name),
     order = "intkey.asc"
   )
 
