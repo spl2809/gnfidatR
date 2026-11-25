@@ -18,7 +18,7 @@ database_structure(
 }
 \arguments{
 \item{accept_profile}{API schema to inspect. One of
-\code{"inventory_archive"}, \code{"derived_tmp"}, \code{"derived"},
+\code{"inventory_archive"}, \code{"derived"},
 \code{"lookup"}, or \code{"public"}.}
 
 \item{apikey}{API key. Defaults to the included public key.}

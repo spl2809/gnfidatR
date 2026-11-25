@@ -1,4 +1,3 @@
-
 test_that("build_wzp joins metrics by complete inventory-specific intkeys", {
     trees <- gnfidatR_tree_fixture()
     derived <- gnfidatR_derived_fixture()[c(3L, 1L, 2L), ]
@@ -423,7 +422,7 @@ test_that("get_derived_tree keeps full intkeys and uses the derived schema", {
     )
 
     expect_identical(actual$intkey, gnfidatR_tree_fixture()$intkey)
-    expect_identical(captured_arguments$accept_profile, "derived_tmp")
+    expect_identical(captured_arguments$accept_profile, "derived")
     expect_identical(captured_arguments[[1]]$order, "intkey.asc")
 })
 

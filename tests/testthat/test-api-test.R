@@ -15,23 +15,6 @@ test_that("Testing meta data and database structure for the Inventory Archive ac
   expect_identical(actual, expected, info = "inventory_archive")
 })
 
-test_that("Testing meta data and database structure for the Derived-Tmp accept-profile", {
-  # Ausnahme von deiner Netzwerksperre für diesen Online-Test:
-  httr2::local_mocked_responses(NULL)
-
-  expected <- readRDS(
-    testthat::test_path(
-      "fixtures",
-      "schema-derived_tmp.rds"
-    )
-  )
-
-  actual <- database_structure("derived_tmp", view = FALSE)
-  attr(actual, "openapi") <- NULL
-
-  expect_identical(actual, expected, info = "derived_tmp")
-})
-
 test_that("Testing meta data and database structure for the Derived accept-profile", {
   # Ausnahme von deiner Netzwerksperre für diesen Online-Test:
   httr2::local_mocked_responses(NULL)

@@ -1,4 +1,3 @@
-
 # ------------------------------------------------------------------------------
 # SQLite Table Builders
 # ------------------------------------------------------------------------------
@@ -35,7 +34,7 @@ build_wzp <- function(url, apikey, conn, plots_and_trees, rename, page_size) {
     stop("Full tree intkeys are required to join derived metrics safely.", call. = FALSE)
   }
   if (anyNA(plots_and_trees$intkey) || anyNA(derived$intkey) ||
-      anyDuplicated(derived$intkey)) {
+    anyDuplicated(derived$intkey)) {
     stop("Tree intkeys must be non-missing; derived intkeys must be unique.", call. = FALSE)
   }
 
@@ -46,12 +45,15 @@ build_wzp <- function(url, apikey, conn, plots_and_trees, rename, page_size) {
   )
   if (nrow(plots_and_trees) > 0L && nrow(wzp) == 0L) {
     stop("No derived metrics match the requested inventory's full tree intkeys.",
-         call. = FALSE)
+      call. = FALSE
+    )
   }
   omitted <- nrow(plots_and_trees) - nrow(wzp)
   if (omitted > 0L) {
-    warning(sprintf("%s tree rows have no matching derived metrics and are omitted.",
-                    omitted), call. = FALSE)
+    warning(sprintf(
+      "%s tree rows have no matching derived metrics and are omitted.",
+      omitted
+    ), call. = FALSE)
   }
 
   if (rename) {
@@ -71,13 +73,17 @@ build_wzp <- function(url, apikey, conn, plots_and_trees, rename, page_size) {
         N_ha  = tidyselect::all_of("trees_per_hectare"),
         D03   = tidyselect::all_of("diameter_30perc")
       )
-    cols <- c("Tnr", "Enr", "Bnr", "Bs", "Ba", "Kh", "Kst",
-              "Bhd", "D03", "Hoe", "StHoe", "Al_ba", "N_ha")
+    cols <- c(
+      "Tnr", "Enr", "Bnr", "Bs", "Ba", "Kh", "Kst",
+      "Bhd", "D03", "Hoe", "StHoe", "Al_ba", "N_ha"
+    )
   } else {
-    cols <- c("cluster_name", "plot_name", "tree_number", "stand_layer",
-              "tree_species", "stem_breakage", "stem_form", "dbh",
-              "diameter_30perc", "tree_height", "stem_height",
-              "tree_age", "trees_per_hectare")
+    cols <- c(
+      "cluster_name", "plot_name", "tree_number", "stand_layer",
+      "tree_species", "stem_breakage", "stem_form", "dbh",
+      "diameter_30perc", "tree_height", "stem_height",
+      "tree_age", "trees_per_hectare"
+    )
   }
 
   wzp <- dplyr::select(wzp, tidyselect::all_of(cols))
@@ -98,7 +104,6 @@ build_wzp <- function(url, apikey, conn, plots_and_trees, rename, page_size) {
 #' @return NULL invisibly.
 #' @author Nils Steuernagel
 build_jung <- function(conn, plots_and_trees_regeneration, rename) {
-
   jung <- plots_and_trees_regeneration
 
   if (rename) {
@@ -113,8 +118,10 @@ build_jung <- function(conn, plots_and_trees_regeneration, rename) {
       )
     cols <- c("Tnr", "Enr", "Ba", "Bs", "Gr", "Anz")
   } else {
-    cols <- c("cluster_name", "plot_name", "tree_species",
-              "stand_layer_regeneration", "tree_size_class", "tree_count")
+    cols <- c(
+      "cluster_name", "plot_name", "tree_species",
+      "stand_layer_regeneration", "tree_size_class", "tree_count"
+    )
   }
 
   jung <- dplyr::select(jung, tidyselect::all_of(cols))
@@ -139,10 +146,11 @@ build_jung <- function(conn, plots_and_trees_regeneration, rename) {
 #' @return NULL invisibly.
 #' @author Nils Steuernagel
 build_eck <- function(conn, plots_and_trees, plots_and_trees_regeneration, share_of_natural_regeneration, rename) {
-
-  cols <- c("cluster_name", "plot_name", "federal_state", "property_type",
-            "acquisition_date", "property_size_class", "management_type",
-            "harvest_restriction","stand_layer_regeneration","sampling_stratum")
+  cols <- c(
+    "cluster_name", "plot_name", "federal_state", "property_type",
+    "acquisition_date", "property_size_class", "management_type",
+    "harvest_restriction", "stand_layer_regeneration", "sampling_stratum"
+  )
   # Combine
   eck <- dplyr::bind_rows(
     plots_and_trees |> dplyr::select(dplyr::all_of(cols)),
@@ -179,7 +187,8 @@ build_eck <- function(conn, plots_and_trees, plots_and_trees_regeneration, share
   key_sql <- paste(key_cols, collapse = ", ")
   if (anyDuplicated(as.data.frame(dplyr::select(eck, tidyselect::all_of(key_cols))))) {
     stop("Conflicting plot metadata would create duplicate WEHAMI_Eck keys.",
-         call. = FALSE)
+      call. = FALSE
+    )
   }
   existing_plots <- DBI::dbGetQuery(
     conn,
@@ -262,10 +271,12 @@ get_weham_data <- function(db_path,
                            apikey = NULL,
                            step_size = 1000,
                            page_size = 10000) {
-  if(is.null(apikey)){
-  apikey  <- paste0("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.",
-  "eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzQ1",
-  "NzkxMjAwLCJleHAiOjE5MDM1NTc2MDB9.hXiYlA_168hHZ6fk3zPgABQUpEcqkYRMzu0A5W5PtYU")
+  if (is.null(apikey)) {
+    apikey <- paste0(
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.",
+      "eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzQ1",
+      "NzkxMjAwLCJleHAiOjE5MDM1NTc2MDB9.hXiYlA_168hHZ6fk3zPgABQUpEcqkYRMzu0A5W5PtYU"
+    )
   }
 
   db_path <- validate_output_path(db_path, "db_path", sqlite = TRUE)
@@ -282,9 +293,9 @@ get_weham_data <- function(db_path,
   page_size <- validate_page_size(page_size, "page_size")
 
 
-  json_step     <- step_size
+  json_step <- step_size
 
-  if(print_progress){
+  if (print_progress) {
     start_total <- proc.time()[["elapsed"]]
 
     log_step("Starting WEHAM-import")
@@ -293,7 +304,7 @@ get_weham_data <- function(db_path,
   }
 
   # -- 1. Cluster list ---------------------------------------------------------
-  if(print_progress){
+  if (print_progress) {
     log_step("Loading cluster list...")
     t0 <- proc.time()[["elapsed"]]
   }
@@ -305,20 +316,20 @@ get_weham_data <- function(db_path,
       call. = FALSE
     )
   }
-  if(print_progress){
+  if (print_progress) {
     log_step(paste("Finished loading cluster list:", length(cluster_liste)), t0)
   }
 
 
   # -- 2. Plot and tree data ---------------------------------------------------
-  if(print_progress){
+  if (print_progress) {
     log_step("Loading plot and tree data (this may take a while)...")
     t0 <- proc.time()[["elapsed"]]
   }
   PaT <- plots_and_trees_fetch(
     url = url,
     apikey = apikey,
-    cluster_liste= cluster_liste,
+    cluster_liste = cluster_liste,
     interval_name = interval_name,
     step = json_step,
     page_size = page_size
@@ -326,7 +337,7 @@ get_weham_data <- function(db_path,
   PaT_reg <- regeneration_fetch(
     url = url,
     apikey = apikey,
-    cluster_liste= cluster_liste,
+    cluster_liste = cluster_liste,
     interval_name = interval_name,
     step = json_step,
     page_size = page_size
@@ -334,9 +345,10 @@ get_weham_data <- function(db_path,
 
   if (nrow(PaT) == 0L || nrow(PaT_reg) == 0L) {
     stop("No tree or regeneration data were found for the requested inventory.",
-         call. = FALSE)
+      call. = FALSE
+    )
   }
-  if(print_progress){
+  if (print_progress) {
     log_step(
       paste("Finished loading plots and trees. Count unique trees :", nrow(PaT)),
       t0
@@ -345,7 +357,7 @@ get_weham_data <- function(db_path,
 
   # -- Optional filtering of the downloaded plots ------------------------------
   if (length(filtering_options) > 0L) {
-    if(print_progress){
+    if (print_progress) {
       log_step("Start filtering the plot data...")
       t0 <- proc.time()[["elapsed"]]
     }
@@ -355,7 +367,7 @@ get_weham_data <- function(db_path,
       apikey            = apikey,
       step              = step_size,
       page_size         = page_size,
-      include_tree_ids  = FALSE       # we only need the plots
+      include_tree_ids  = FALSE # we only need the plots
     )
 
     PaT <- filter_df(PaT, filter_plot_ids)
@@ -363,10 +375,11 @@ get_weham_data <- function(db_path,
 
     if (nrow(PaT) == 0L || nrow(PaT_reg) == 0L) {
       stop("After filtering, no tree or regeneration data remained for the requested inventory.",
-         call. = FALSE)
+        call. = FALSE
+      )
     }
 
-    if(print_progress){
+    if (print_progress) {
       log_step(
         paste("Finished filtering the plot data.", nrow(PaT), "unique trees remain"),
         t0
@@ -375,7 +388,7 @@ get_weham_data <- function(db_path,
   }
 
   # -- 3. Open database --------------------------------------------------------
-  if(print_progress){
+  if (print_progress) {
     log_step("Opening SQLite database ...")
   }
   conn <- RSQLite::dbConnect(RSQLite::SQLite(), db_path)
@@ -384,17 +397,17 @@ get_weham_data <- function(db_path,
 
   DBI::dbWithTransaction(conn, {
     # -- 4. Winkelzählprobe ------------------------------------------------------
-    if(print_progress){
+    if (print_progress) {
       log_step("Writing WEHAMI_WZP ...")
       t0 <- proc.time()[["elapsed"]]
     }
     build_wzp(url, apikey, conn, PaT, rename, page_size)
-    if(print_progress){
+    if (print_progress) {
       log_step("Finished WEHAMI_WZP", t0)
     }
 
     # -- 5. Jungholz -------------------------------------------------------------
-    if(print_progress){
+    if (print_progress) {
       log_step("Writing WEHAMI_Jung ...")
       t0 <- proc.time()[["elapsed"]]
     }
@@ -403,12 +416,12 @@ get_weham_data <- function(db_path,
       PaT_reg,
       rename
     )
-    if(print_progress){
+    if (print_progress) {
       log_step("Finished WEHAMI_Jung", t0)
     }
 
     # -- 6. Tracktecken-----------------------------------------------------------
-    if(print_progress){
+    if (print_progress) {
       log_step("Writing WEHAMI_Eck ...")
       t0 <- proc.time()[["elapsed"]]
     }
@@ -420,7 +433,7 @@ get_weham_data <- function(db_path,
       rename
     )
   })
-  if(print_progress){
+  if (print_progress) {
     log_step("Finished WEHAMI_Eck", t0)
 
     # --------------------------------------------------------------------------
@@ -429,8 +442,6 @@ get_weham_data <- function(db_path,
   }
   invisible(NULL)
 }
-
-
 
 
 #' Retrieve the sorted list of cluster names from the API
@@ -494,12 +505,14 @@ plots_and_trees_fetch <- function(url, apikey, cluster_liste, interval_name, ste
     url = url,
     apikey = apikey,
     accept_profile = "inventory_archive",
-    page_size = page_size)
-  if (nrow(df) == 0L) return(empty_plot_records("tree"))
+    page_size = page_size
+  )
+  if (nrow(df) == 0L) {
+    return(empty_plot_records("tree"))
+  }
   df <- explode_column(df, "tree")
   return(df)
 }
-
 
 
 #' Fetch plot metadata joined with individual tree measurements from regeneration
@@ -517,7 +530,6 @@ plots_and_trees_fetch <- function(url, apikey, cluster_liste, interval_name, ste
 #'   metadata. Equal projections of distinct source records are retained.
 #' @author Nils Steuernagel, Stefan Paul
 regeneration_fetch <- function(url, apikey, cluster_liste, interval_name, step, page_size) {
-
   params <- list(
     interval_name = paste0("eq.", interval_name),
     select = paste0(
@@ -536,19 +548,19 @@ regeneration_fetch <- function(url, apikey, cluster_liste, interval_name, step, 
     url = url,
     apikey = apikey,
     accept_profile = "inventory_archive",
-    page_size = page_size)
-  if (nrow(jung) == 0L) return(empty_plot_records("regeneration"))
+    page_size = page_size
+  )
+  if (nrow(jung) == 0L) {
+    return(empty_plot_records("regeneration"))
+  }
   jung <- explode_column(jung, "regeneration")
   return(jung)
 }
 
 
-
-
-
 #' Download derived per-tree metrics (trees_per_hectare, diameter_30perc)
 #'
-#' Fetches from the derived_tmp schema. Keeps the complete intkey so that
+#' Fetches from the derived schema. Keeps the complete intkey so that
 #' inventory context is retained when joining with measured trees.
 #'
 #' @param url    Base URL of the REST API.
@@ -570,7 +582,7 @@ get_derived_tree <- function(url, apikey, limit) {
     url,
     apikey,
     limit,
-    accept_profile = "derived_tmp"
+    accept_profile = "derived"
   )
 
   return(derived)
@@ -601,15 +613,15 @@ empty_plot_records <- function(child) {
       tree_species = integer(),
       stem_breakage = integer(),
       stem_form = integer(),
-      tree_age = integer()),
-
+      tree_age = integer()
+    ),
     regeneration = data.frame(
       intkey = character(),
       tree_species = integer(),
       tree_size_class = integer(),
-      tree_count = integer()),
+      tree_count = integer()
+    ),
     stop("Unknown embedded table.", call. = FALSE)
   )
   cbind(out, child_data)
 }
-

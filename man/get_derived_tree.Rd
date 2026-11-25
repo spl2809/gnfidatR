@@ -17,7 +17,7 @@ get_derived_tree(url, apikey, limit)
 A data frame with intkey, trees_per_hectare, and diameter_30perc.
 }
 \description{
-Fetches from the derived_tmp schema. Keeps the complete intkey so that
+Fetches from the derived schema. Keeps the complete intkey so that
 inventory context is retained when joining with measured trees.
 }
 \author{

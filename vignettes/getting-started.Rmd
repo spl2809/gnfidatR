@@ -446,18 +446,17 @@ chooses the schema, while `table` chooses a table inside it. Thus,
 The default profile of `gnfi_query()` is `"inventory_archive"`.
 `database_structure()` accepts the following profiles:
 
-| Profile             | Use                                                                                                       |
-| ------------------- | --------------------------------------------------------------------------------------------------------- |
-| `inventory_archive` | Inventory tables; the default for `gnfi_query()`                                                          |
-| `lookup`            | Code lists and their labels                                                                               |
-| `derived_tmp`       | Derived variables; the API documentation currently identifies this as the source for inventory cycle 2022 |
-| `derived`           | An additional profile whose available tables can be inspected                                             |
-| `public`            | An additional profile whose available tables can be inspected                                             |
+| Profile             | Use                                                           |
+| ------------------- | ------------------------------------------------------------- |
+| `inventory_archive` | Inventory tables; the default for `gnfi_query()`              |
+| `lookup`            | Code lists and their labels                                   |
+| `derived`           | Derived and calculated variables                              |
+| `public`            | An additional profile whose available tables can be inspected |
 
 
 ```{r inspect-derived-schema, eval = FALSE}
 derived_schema <- database_structure(
-  accept_profile = "derived_tmp",
+  accept_profile = "derived",
   view = FALSE
 )
 
@@ -567,10 +566,10 @@ Acceptance of an interval name does **not** guarantee that all required
 tree, regeneration, and derived data are available for it.
 
 The current implementation always retrieves derived tree data from
-`derived_tmp`. Changing `interval_name` does not select another derived
+`derived`. Changing `interval_name` does not select another derived
 schema. The
 [official API documentation](https://thuenen-forest-ecosystems.github.io/TFM-Documentation/api/getting-started.html)
-identifies `derived_tmp` as the source for inventory cycle 2022; other
+identifies `derived` as the source for inventory cycle 2022; other
 intervals require matching metrics in that same source to complete this
 workflow.
 
@@ -705,6 +704,6 @@ Caused by error in `curl::curl_fetch_memory()`:
 Recv failure: Connection was reset
 ```
 1. Check your Internet connection
-1. Check if the specified table is correct: compare your table with the ones specified in `database_structure("inventory_archive)`. If you don't use "inventory_archive" profile but the "lookup" or "derived_tmp" profile replace the name.
+1. Check if the specified table is correct: compare your table with the ones specified in `database_structure("inventory_archive)`. If you don't use "inventory_archive" profile but the "lookup" or "derived" profile replace the name.
 2. If use specifed an URL check if it is correct
 3. Open a terminal an input `ping ci.thuenen.de` or `ping <server_domain>`. If this fails the server is down. Contact the Thünen Institute.

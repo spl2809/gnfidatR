@@ -86,7 +86,7 @@ openapi_schema_to_df <- function(openapi, accept_profile) {
 #' for a selected schema. Optionally display the result in a data viewer.
 #'
 #' @param accept_profile API schema to inspect. One of
-#'   \code{"inventory_archive"}, \code{"derived_tmp"}, \code{"derived"},
+#'   \code{"inventory_archive"}, \code{"derived"}, \code{"derived"},
 #'   \code{"lookup"}, or \code{"public"}.
 #' @param apikey API key. Defaults to the included public key.
 #' @param url REST API base URL. Defaults to
@@ -132,7 +132,7 @@ database_structure <- function(
   accept_profile <- validate_identifier(
     accept_profile,
     "accept_profile",
-    "^(inventory_archive|derived_tmp|derived|lookup|public)$"
+    "^(inventory_archive|derived|lookup|public)$"
   )
   url <- validate_api(url, apikey)
   validate_flags(list(view = view, return_data = return_data))

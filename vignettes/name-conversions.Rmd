@@ -37,33 +37,34 @@ The following table should explain how the FVA-BW names are related to the new T
 
 
 | Thuenen API schema  | Thuenen API table | New Thuenen Institut Name       | WEHAM / FVA-BW Name | WEHAM table                               |
-| ------------------- | ----------------- | --------------------------------| ------------------- |-------------------------------------------|
-| `inventory_archive` |          `plot`| `interval_name`                 | Not exported        | Used to select the inventory interval     |
-| `inventory_archive` |            `plot` | `cluster_name`                  | `Tnr`               | `WEHAMI_WZP`, `WEHAMI_Jung`, `WEHAMI_Eck` |
-| `inventory_archive` |            `plot` | `plot_name`                     | `Enr`               | `WEHAMI_WZP`, `WEHAMI_Jung`, `WEHAMI_Eck` |
-| `inventory_archive` |            `plot` | `federal_state`                 | `Bl`                | `WEHAMI_Eck`                              |
-| `inventory_archive` |            `plot` | `acquisition_date`              | `DatumFeld`         | `WEHAMI_Eck`                              |
-| `inventory_archive` |            `plot` | `property_type`                 | `Eg`                | `WEHAMI_Eck`                              |
-| `inventory_archive` |            `plot` | `property_size_class`           | `Grkl`              | `WEHAMI_Eck`                              |
-| `inventory_archive` |            `plot` | `management_type`               | `Be`                | `WEHAMI_Eck`                              |
-| `inventory_archive` |            `plot` | `harvest_restriction`           | `Ne`                | `WEHAMI_Eck`                              |
-| `inventory_archive` |            `plot` | `stand_layer_regeneration`      | `BsP100`            | `WEHAMI_Eck`                              |
-| `inventory_archive` |            `plot` | `stand_layer_regeneration`      | `BsP175`            | `WEHAMI_Eck`                              |
-| `inventory_archive` |            `plot` | `stand_layer_regeneration`      | `Bs`                | `WEHAMI_Jung`                             |
-| `inventory_archive` |            `tree` | `stand_layer`                   | `Bs`                | `WEHAMI_WZP`                              |
-| `inventory_archive` |            `tree` | `tree_species`                  | `Ba`                | `WEHAMI_WZP`                              |
-| `inventory_archive` |            `tree` | `tree_number`                   | `Bnr`               | `WEHAMI_WZP`                              |
-| `inventory_archive` |            `tree` | `stem_breakage`                 | `Kh`                | `WEHAMI_WZP`                              |
-| `inventory_archive` |            `tree` | `stem_form`                     | `Kst`               | `WEHAMI_WZP`                              |
-| `inventory_archive` |            `tree` | `dbh`                           | `Bhd`               | `WEHAMI_WZP`                              |
-| `inventory_archive` |            `tree` | `tree_height`                   | `Hoe`               | `WEHAMI_WZP`                              |
-| `inventory_archive` |            `tree` | `stem_height`                   | `StHoe`             | `WEHAMI_WZP`                              |
-| `inventory_archive` |            `tree` | `tree_age`                      | `Al_ba`             | `WEHAMI_WZP`                              |
-| `inventory_archive` |    `regeneration` | `tree_species`                  | `Ba`                | `WEHAMI_Jung`                             |
-| `inventory_archive` |    `regeneration` | `tree_size_class`               | `Gr`                | `WEHAMI_Jung`                             |
-| `inventory_archive` |    `regeneration` | `tree_count`                    | `Anz`               | `WEHAMI_Jung`                             |
-|       `derived_tmp` |            `tree` | `diameter_30perc`               | `D03`               | `WEHAMI_WZP`                              |
-|       `derived_tmp` |            `tree` | `trees_per_hectare`             | `N_ha`              | `WEHAMI_WZP`                              |
+| ------------------- | ----------------- | ------------------------------- | ------------------- | ----------------------------------------- |
+| `inventory_archive` | `plot`            | `interval_name`                 | Not exported        | Used to select the inventory interval     |
+| `inventory_archive` | `plot`            | `cluster_name`                  | `Tnr`               | `WEHAMI_WZP`, `WEHAMI_Jung`, `WEHAMI_Eck` |
+| `inventory_archive` | `plot`            | `plot_name`                     | `Enr`               | `WEHAMI_WZP`, `WEHAMI_Jung`, `WEHAMI_Eck` |
+| `inventory_archive` | `plot`            | `federal_state`                 | `Bl`                | `WEHAMI_Eck`                              |
+| `inventory_archive` | `plot`            | `acquisition_date`              | `DatumFeld`         | `WEHAMI_Eck`                              |
+| `inventory_archive` | `plot`            | `property_type`                 | `Eg`                | `WEHAMI_Eck`                              |
+| `inventory_archive` | `plot`            | `property_size_class`           | `Grkl`              | `WEHAMI_Eck`                              |
+| `inventory_archive` | `plot`            | `management_type`               | `Be`                | `WEHAMI_Eck`                              |
+| `inventory_archive` | `plot`            | `harvest_restriction`           | `Ne`                | `WEHAMI_Eck`                              |
+| `inventory_archive` | `plot`            | `stand_layer_regeneration`      | `BsP100`            | `WEHAMI_Eck`                              |
+| `inventory_archive` | `plot`            | `stand_layer_regeneration`      | `BsP175`            | `WEHAMI_Eck`                              |
+| `inventory_archive` | `plot`            | `stand_layer_regeneration`      | `Bs`                | `WEHAMI_Jung`                             |
+| `inventory_archive` | `tree`            | `stand_layer`                   | `Bs`                | `WEHAMI_WZP`                              |
+| `inventory_archive` | `tree`            | `tree_species`                  | `Ba`                | `WEHAMI_WZP`                              |
+| `inventory_archive` | `tree`            | `tree_number`                   | `Bnr`               | `WEHAMI_WZP`                              |
+| `inventory_archive` | `tree`            | `stem_breakage`                 | `Kh`                | `WEHAMI_WZP`                              |
+| `inventory_archive` | `tree`            | `stem_form`                     | `Kst`               | `WEHAMI_WZP`                              |
+| `inventory_archive` | `tree`            | `tree_height`                   | `Hoe`               | `WEHAMI_WZP`                              |
+| `inventory_archive` | `tree`            | `stem_height`                   | `StHoe`             | `WEHAMI_WZP`                              |
+| `inventory_archive` | `tree`            | `tree_age`                      | `Al_ba`             | `WEHAMI_WZP`                              |
+| `inventory_archive` | `regeneration`    | `tree_species`                  | `Ba`                | `WEHAMI_Jung`                             |
+| `inventory_archive` | `regeneration`    | `tree_size_class`               | `Gr`                | `WEHAMI_Jung`                             |
+| `inventory_archive` | `regeneration`    | `tree_count`                    | `Anz`               | `WEHAMI_Jung`                             |
+| `inventory_archive` | `tree`            | `dbh`                           | `Bhd`               | not used - derived.tree.dbh is used       |
+| `derived`           | `tree`            | `dbh`                           | `Bhd`               | `WEHAMI_WZP`                              |
+| `derived`           | `tree`            | `diameter_30perc`               | `D03`               | `WEHAMI_WZP`                              |
+| `derived`           | `tree`            | `trees_per_hectare`             | `N_ha`              | `WEHAMI_WZP`                              |
 | Function argument   | Not an API table  | `share_of_natural_regeneration` | `NatVjProz`         | `WEHAMI_Eck`                              |
 
 **Additional details:**

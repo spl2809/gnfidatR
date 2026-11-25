@@ -59,7 +59,6 @@ head(schema)
 The available schemas include:
 
 * `inventory_archive`
-* `derived_tmp`
 * `derived`
 * `lookup`
 * `public`
