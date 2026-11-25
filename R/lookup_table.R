@@ -4,10 +4,10 @@
 #' \code{gnfi_query()}. Optionally open the result in a data viewer or export
 #' it to CSV or SQLite.
 #'
-#' @param table A single character string giving the lookup name without the
-#'   \code{lookup_} prefix, for example \code{"state"},
-#'   \code{"tree_species"}, or \code{"land_use"}. The prefix is added
-#'   internally, and the name is validated against the supported lookup tables.
+#' @param table A single character string identifying a lookup table, without
+#'   the \code{lookup_} prefix, for example \code{"state"} or
+#'   \code{"tree_species"}. The prefix is added internally. See the
+#'   \emph{Supported lookup tables} section for all accepted values.
 #' @param url Base URL of the REST API. Defaults to
 #'   \code{"https://ci.thuenen.de/rest/v1/"}.
 #' @param apikey API key passed to \code{gnfi_query()}. A public API key is
@@ -54,6 +54,35 @@
 #' Export options are forwarded to \code{gnfi_query()}. The result is still
 #' returned when an export is enabled. API and export errors from
 #' \code{gnfi_query()} are propagated, and results are not cached.
+#'
+#' #' @section Supported lookup tables:
+#' The following values are accepted for \code{table}. Supply the names
+#' exactly as shown, without the \code{lookup_} prefix:
+#'
+#' \code{"accessibility"}, \code{"bark_condition"}, \code{"basal_area_factor"},
+#' \code{"biogeographische_region"}, \code{"biosphaere"}, \code{"biotope"},
+#' \code{"browsing"}, \code{"cluster_situation"}, \code{"cluster_status"},
+#' \code{"cover_percentage"}, \code{"damage_peel"}, \code{"dead_wood_type"},
+#' \code{"decomposition"}, \code{"district"}, \code{"edge_stand_difference"},
+#' \code{"edge_status"}, \code{"edge_type"}, \code{"edge_type_deprecated"},
+#' \code{"elevation_level"}, \code{"exploration_instruction"}, \code{"ffh"},
+#' \code{"ffh_forest_type"}, \code{"forest_community"}, \code{"forest_office"},
+#' \code{"forest_status"}, \code{"gnss_quality"}, \code{"grid_density"},
+#' \code{"growth_district"}, \code{"growth_region"},
+#' \code{"harvest_condition"}, \code{"harvest_method"},
+#' \code{"harvest_reason"}, \code{"harvest_restriction"}, \code{"interval"},
+#' \code{"land_use"}, \code{"layer"}, \code{"management_type"},
+#' \code{"marker_profile"}, \code{"marker_status"}, \code{"municipality"},
+#' \code{"national_park"}, \code{"natur_park"}, \code{"natur_schutzgebiet"},
+#' \code{"object_type"}, \code{"property_size_class"}, \code{"property_type"},
+#' \code{"pruning"}, \code{"sampling_stratum"},
+#' \code{"stand_development_phase"}, \code{"stand_layer"},
+#' \code{"stand_structure"}, \code{"state"}, \code{"stem_breakage"},
+#' \code{"stem_form"}, \code{"support_point_type"}, \code{"terrain"},
+#' \code{"terrain_form"}, \code{"tree_size_class"}, \code{"tree_species"},
+#' \code{"tree_species_group"}, \code{"tree_status"},
+#' \code{"trees_greater_4meter_mirrored"}, \code{"trees_less_4meter_origin"},
+#' \code{"vogel_schutzgebiet"}. 
 #'
 #' @seealso \code{\link{gnfi_query}}, \code{\link[utils]{View}}
 #' @examples
