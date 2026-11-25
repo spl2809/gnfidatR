@@ -529,7 +529,312 @@ Check the resulting types, especially for dates, identifiers, and missing
 values. Do not use the SQLite functionality when selecting dates with the `YYYY-MM-DD` format. It will convert the value in an integer.
 
 
-## More examples
+## More examples {#more-examples}
+
+This sections hold 5 extensive examples of how `gnfi_query` can be used.
+
+### 1. Find large habitat beeches without a measured height {#example-habitat-beeches}
+
+A habitat-tree study needs candidate beech records from Baden-Württemberg
+and Bavaria in `bwi2022`. Select trees with a measured DBH of at least
+50 cm but less than 100 cm, membership in the stand, and either a cavity
+or the recorded crown-deadwood indicator.
+
+```{r example-habitat-beeches-1, eval = FALSE}
+params <- list(
+    select = paste0(
+      "tree_record_id:id,intkey,plot_id,tree_number,tree_status,",
+      "tree_species,dbh,tree_height,within_stand,cave_tree,crown_dead_wood"
+    ),
+    tree_species = "eq.100",
+    dbh = c("gte.500", "lt.1000"),
+    tree_height = "is.null",
+    within_stand = "is.true",
+    or = "(cave_tree.is.true,crown_dead_wood.is.true)",
+    order = "id.asc"
+  )
+filtering_options <- list(
+    interval_name = "bwi2022",
+    federal_states = c(8, 9)
+  )
+
+habitat_beeches <- gnfi_query(
+  table = "tree",
+  accept_profile = "inventory_archive",
+  params = params,
+  filtering_options = filtering_options
+)
+head(habitat_beeches)
+```
+
+**Explanation**:
+- `tree_height = "is.null"` selects an unrecorded field height, not a
+height of zero.
+- `dbh = c("gte.500", "lt.1000")` combines both conditions with SQL-like `AND`.
+- The `or` expression accepts either habitat indicator. 
+- The `for`-loop adds the names instead of the numeric values.
+  
+
+```{r example-habitat-beeches-2, eval = FALSE}
+habitat_beeches_named <- habitat_beeches
+
+for (column in c("tree_species", "tree_status")) {
+  lookup <- gnfidatR::view_lookup(column, view_data = FALSE)
+  codes <- habitat_beeches[[column]]
+
+  stopifnot(!anyDuplicated(lookup$code))
+  index <- match(codes, lookup$code)
+  stopifnot(all(is.na(codes) | !is.na(index)))
+
+  habitat_beeches_named[[paste0(column, "_code")]] <- codes
+  habitat_beeches_named[[column]] <- lookup$name_de[index]
+}
+
+head(habitat_beeches_named)
+```
+
+
+
+
+
+
+
+
+
+
+### 2. Compare browsing categories in unprotected regeneration {#example-regeneration-browsing}
+
+A regeneration survey compares species codes 100 and 110 in Bavaria,
+within ownership categories 1 and 2. Inspect the species, ownership, and
+browsing labels before interpreting these codes; the schema CSVs describe
+columns but do not contain the lookup rows.
+
+```{r example-regeneration-labels, eval = FALSE}
+species_codes <- view_lookup("tree_species", view_data = FALSE)
+species_codes[species_codes$code %in% c(100, 110), c("code", "name_de")]
+
+ownership_codes <- view_lookup("property_type", view_data = FALSE)
+ownership_codes[ownership_codes$code %in% c(1, 2), c("code", "name_de")]
+
+browsing_codes <- view_lookup("browsing", view_data = FALSE)
+browsing_codes[, c("code", "name_de")]
+```
+
+Retain positive recorded counts, a recorded browsing category and size
+class, and an explicitly false individual-protection flag. Group the
+counts by size class as well as species and browsing category.
+
+```{r example-regeneration-browsing, eval = FALSE}
+params <- list(
+    select = paste0(
+      "id,plot_id,tree_species,tree_size_class,browsing,",
+      "protection_individual,tree_count"
+    ),
+    tree_species = "in.(100,110)",
+    tree_count = "gt.0",
+    browsing = "not.is.null",
+    tree_size_class = "not.is.null",
+    protection_individual = "is.false",
+    order = "id.asc"
+)
+
+unprotected_regeneration <- gnfi_query(
+  table = "regeneration",
+  accept_profile = "inventory_archive",
+  params = params,
+  filtering_options = list(
+    interval_name = "bwi2022",
+    federal_states = 9,
+    property_type = c(1, 2)
+  )
+)
+
+browsing_summary <- dplyr::count(
+  unprotected_regeneration,
+  tree_species, tree_size_class, browsing,
+  wt = tree_count,
+  name = "recorded_saplings"
+)
+
+browsing_summary
+```
+
+**Explanation**:
+- Both `"in.(100,110)"` and `property_type = c(1, 2)` are selecting rows where one of both values is present
+-  The filter `is.false` selects the boolean value `false`. If the value does not exist (`NULL`) or is `true`, the row is dismissed.
+
+
+### 3. Screen coarse deadwood for habitat features {#example-deadwood-habitat}
+
+A deadwood habitat assessment needs
+records with bark pockets, a recorded diameter over 30 cm, and a length
+or height from 2 to 10 m inclusive. Restrict the sample to positive counts
+with a recorded decomposition category.
+
+```{r example-deadwood-habitat, eval = FALSE}
+habitat_deadwood <- gnfi_query(
+  table = "deadwood",
+  accept_profile = "inventory_archive",
+  params = list(
+    select = paste0(
+      "id,plot_id,tree_species_group,dead_wood_type,decomposition,",
+      "diameter_butt,length_height,count,bark_pocket"
+    ),
+    diameter_butt = "gt.30",
+    length_height = c("gte.20", "lte.100"),
+    count = "gt.0",
+    decomposition = "not.is.null",
+    bark_pocket = "is.true",
+    order = "id.asc"
+  ),
+  filtering_options = list(
+    interval_name = "bwi2022"
+  )
+)
+
+deadwood_summary <- dplyr::count(
+  habitat_deadwood,
+  tree_species_group, decomposition,
+  wt = count,
+  name = "recorded_pieces"
+)
+
+deadwood_summary
+```
+
+
+### 4. Add derived metrics to the habitat-tree sample {#example-join-derived-trees}
+
+Continue Example 1 by attaching processed height, volume, and biomass
+fields from `derived.tree` to `habitat_beeches`. The supplied metadata
+describe these derived tables as 2022 data, matching the `bwi2022` cohort.
+
+The two tables' `id` columns are primary keys within their own
+tables, so join on them.
+
+```{r example-join-derived-trees, eval = FALSE}
+if (nrow(habitat_beeches) == 0L) {
+  stop("Example 1 returned no trees; revise that cohort before joining.")
+}
+
+derived_tree_metrics <- gnfi_query(
+  table = "tree",
+  accept_profile = "derived",
+  params = list(
+    select = paste0(
+      "derived_record_id:id,intkey,processed_tree_height:tree_height,",
+      "above_ground_biomass,below_ground_biomass"
+    ),
+    intkey = paste0("like.*", "bwi2022"),
+    order = "id.asc"
+  )
+)
+
+habitat_beeches_with_metrics <- dplyr::left_join(
+  habitat_beeches,
+  derived_tree_metrics,
+  by = "intkey",
+  na_matches = "never"
+)
+
+table(has_derived_record = !is.na(
+  habitat_beeches_with_metrics$derived_record_id
+))
+head(habitat_beeches_with_metrics)
+```
+
+The left join retains trees without matching derived records. The aliased
+`derived_record_id` distinguishes an absent match from a matched record
+whose metric is missing. `processed_tree_height` is kept separate from
+the archive's measured `tree_height`. Check derived-variable definitions
+and units before converting biomass to carbon; the supplied metadata do
+not specify biomass units.
+
+This query downloads the derived tree table with non-missing keys.
+`filtering_options` cannot be applied to `derived`; the local join
+restricts the result to the habitat-tree cohort.
+
+### 5. Join trees to plot conditions for a stability analysis {#example-join-archive-tables}
+
+A stand-stability study needs measured height-to-diameter ratios for
+species other than beech on Bavarian plots with slopes of 10--35 degrees
+and stand ages over 40 but no more than 120 years, in `bwi2022`.
+Download the plot cohort first, then request its tree records in batches
+of at most 100 plot UUIDs to keep request URLs manageable.
+
+```{r example-join-archive-tables, eval = FALSE}
+slope_plots <- gnfi_query(
+  table = "plot",
+  accept_profile = "inventory_archive",
+  params = list(
+    select = paste0(
+      "plot_id:id,interval_name,cluster_name,plot_name,",
+      "terrain_slope,stand_age"
+    ),
+    interval_name = "eq.bwi2022",
+    federal_state = "eq.9",
+    terrain_slope = c("gte.10", "lte.35"),
+    stand_age = c("gt.40", "lte.120"),
+    order = "id.asc"
+  )
+)
+
+plot_batches <- split(
+  slope_plots$plot_id,
+  ceiling(seq_len(nrow(slope_plots)) / 100)
+)
+
+tree_batches <- lapply(plot_batches, function(plot_ids) {
+  gnfi_query(
+    table = "tree",
+    accept_profile = "inventory_archive",
+    params = list(
+      select = paste0(
+        "tree_record_id:id,intkey,plot_id,tree_number,tree_status,",
+        "tree_species,dbh,tree_height,within_stand"
+      ),
+      plot_id = paste0("in.(", paste(plot_ids, collapse = ","), ")"),
+      tree_species = "neq.100",
+      dbh = "gt.0",
+      tree_height = "gt.0",
+      within_stand = "is.true",
+      order = "id.asc"
+    )
+  )
+})
+slope_trees <- dplyr::bind_rows(tree_batches)
+
+slope_trees_with_site <- dplyr::left_join(
+  slope_trees,
+  slope_plots,
+  by = "plot_id",
+  na_matches = "never"
+)
+
+slope_trees_with_site <- dplyr::mutate(
+  slope_trees_with_site,
+  dbh_m = dbh / 1000,
+  height_m = tree_height / 10,
+  height_dbh_ratio = height_m / dbh_m
+)
+
+head(slope_trees_with_site)
+```
+
+The relationship is `tree.plot_id` to `plot.id`; the plot query aliases
+`id` to `plot_id` so both data frames use the same join-column name.
+Several trees can share a plot, while each plot key must be unique in the
+plot data. Selecting `tree_record_id` preserves the identity of each tree
+record, and the checks verify that joining does not multiply rows or lose
+plot matches.
+
+`neq.100` excludes beech and also excludes missing species codes under SQL
+NULL semantics. Positive DBH and height filters ensure the ratio uses
+recorded positive measurements. Both lengths are converted to metres, so
+`height_dbh_ratio` is dimensionless. It can support comparisons by species
+and site; it is not a stand-alone prediction of wind damage.
+
+
 
 # Creating a WEHAM database {#creating-a-weham-database}
 
