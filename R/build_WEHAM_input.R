@@ -10,6 +10,7 @@
 #' @param apikey          API key.
 #' @param conn            An open DBI connection to the SQLite database.
 #' @param plots_and_trees Data frame returned by `plots_and_trees_fetch()`.
+#' @param derived         Data of the derived tree metrics.
 #' @param rename          Logical; if TRUE columns are renamed to German
 #'   short codes (Tnr, Enr, ...) used by downstream WEHAM models.
 #' @param page_size  Requested page size for derived data; all pages are fetched.
@@ -599,14 +600,15 @@ regeneration_fetch <- function(url, apikey, cluster_liste, interval_name, step, 
 #' Fetches from the derived schema. Keeps the complete intkey so that
 #' inventory context is retained when joining with measured trees.
 #'
-#' @param url    Base URL of the REST API.
-#' @param apikey API key.
-#' @param limit  Requested rows per page; -1 uses automatic pages of 10000.
+#' @param interval_name Interval of the requested data.
+#' @param url           Base URL of the REST API.
+#' @param apikey        API key.
+#' @param limit         Requested rows per page; -1 uses automatic pages of 10000.
 #' @keywords internal
 #' @return A data frame with intkey, trees_per_hectare, and diameter_30perc.
 #' @author Nils Steuernagel
 
-get_derived_tree <- function(url, apikey, limit, interval_name = "bwi2022") {
+get_derived_tree <- function(url, apikey, limit, interval_name) {
   params <- list(
     select = paste0(
       "intkey,dbh,tree_height,stem_height,trees_per_hectare,diameter_30perc"
